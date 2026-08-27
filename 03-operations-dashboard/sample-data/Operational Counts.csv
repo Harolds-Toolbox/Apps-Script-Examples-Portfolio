@@ -1,0 +1,7 @@
+Timestamp,Business Date,Site,Category,Quantity
+2026-01-15T08:30:00Z,2026-01-15,North Site,Completed Orders,84
+2026-01-15T08:30:00Z,2026-01-15,North Site,Open Exceptions,3
+2026-01-15T08:35:00Z,2026-01-15,Central Site,Completed Orders,72
+2026-01-15T08:35:00Z,2026-01-15,Central Site,Open Exceptions,1
+2026-01-15T08:40:00Z,2026-01-15,South Site,Completed Orders,91
+2026-01-15T08:40:00Z,2026-01-15,South Site,Open Exceptions,0
