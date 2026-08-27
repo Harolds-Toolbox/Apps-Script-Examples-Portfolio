@@ -1,6 +1,6 @@
 # Apps Script Examples Portfolio
 
-Seven complete, public-safe Google Apps Script projects based on business automation patterns used in real operational systems. The implementations have been generalized, secured, and documented for demonstration purposes. They contain no employer code, production identifiers, personal data, logos, watermarks, or private endpoints.
+Fourteen complete, public-safe Google Apps Script projects based on business automation patterns used in real operational systems. The implementations have been generalized, secured, and documented for demonstration purposes. They contain no employer code, production identifiers, personal data, logos, watermarks, or private endpoints.
 
 ## Projects
 
@@ -13,6 +13,13 @@ Seven complete, public-safe Google Apps Script projects based on business automa
 | [Reliable webhook inbox](05-reliable-webhook-inbox/) | Fast intake, HMAC validation, durable queue, retries, deduplication, reconciliation |
 | [Schema-aware file pipeline](06-schema-aware-file-pipeline/) | CSV/XLSX ingestion, schema checks, runtime budgets, staged destinations |
 | [API data catalogue](07-api-data-catalogue/) | Token-based API access, endpoint sampling, recursive schema discovery, catalogue UI |
+| [Appointment confirmation workflow](08-appointment-confirmation-workflow/) | Scheduled reminders, expiring one-time response links, escalation, audit history |
+| [Record history and entity resolution](09-record-history-entity-resolution/) | Versioned snapshots, append-only change history, review-first duplicate matching |
+| [Dynamic project intake tracker](10-dynamic-project-intake-tracker/) | Stable block IDs, configuration-driven validation, dynamic rows, JSON archiving |
+| [Self-healing webhook manager](11-self-healing-webhook-manager/) | Signed intake, subscription health checks, reactivation, rotation, deduplication |
+| [Cross-system completion reconciliation](12-cross-system-completion-reconciliation/) | Paginated API comparison, layered matching, grace periods, consolidated exceptions |
+| [Configuration management dialog](13-configuration-management-dialog/) | Safe HTML bootstrapping, multi-record editing, drag ordering, atomic Sheet updates |
+| [Consent-aware notification lifecycle](14-consent-aware-notification-lifecycle/) | Preference matching, reviewer approval, opaque unsubscribe links, retention review |
 
 ## Repository principles
 

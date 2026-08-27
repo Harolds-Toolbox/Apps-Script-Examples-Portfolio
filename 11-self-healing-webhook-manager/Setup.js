@@ -1,0 +1,1 @@
+function installWebhookHealthCheck(){ScriptApp.getProjectTriggers().filter(t=>t.getHandlerFunction()==='reconcileProviderWebhook').forEach(t=>ScriptApp.deleteTrigger(t));ScriptApp.newTrigger('reconcileProviderWebhook').timeBased().everyHours(1).create();reconcileProviderWebhook();}
