@@ -5,7 +5,9 @@ This scheduled job searches the Companies House API, normalises the results, kee
 ## Flow
 
 ```text
-time trigger → paginated Companies House search → filter/deduplicate → CSV snapshot
+time trigger → postcode/SIC search partitions → paginate each to its reported total
+                                                    ↓
+                                      exact postcode filter/deduplicate → CSV snapshot
 previous snapshot ───────────────────────────────→ compare changes ─┬→ Registry Report sheet
                                                                   └→ optional email summary
 ```
@@ -38,8 +40,9 @@ The first run may ask for permission to call an external service. Adding the opt
 
 1. Use one postcode area and one activity code that return a small result set. To test without a SIC filter, set `REGISTRY_ACTIVITY_CODES` to `*` or delete the property.
 2. Run `runRegistryMonitor()` and inspect the report sheet and first CSV snapshot.
-3. Run it again. The second run should compare two snapshots and report zero changes when the source data is unchanged.
-4. Temporarily change the filter, run again and confirm additions/removals are shown.
-5. Restore the intended filters before installing the trigger.
+3. Confirm the execution log reports no pagination error. Each postcode/SIC partition is fetched until the API's reported `hits` total has been consumed; an empty page before that total is treated as an error rather than a partial result.
+4. Run it again. The second run should compare two snapshots and report zero changes when the source data is unchanged.
+5. Temporarily change the filter, run again and confirm additions/removals are shown.
+6. Restore the intended filters before installing the trigger.
 
 The API criteria are deployment configuration. Nothing in setup publishes files or changes sharing permissions.

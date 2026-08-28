@@ -8,21 +8,15 @@ function fetchRegistryCompanies_() {
   const results = [];
 
   REGISTRY_CONFIG.statuses.forEach(function (status) {
-    activityCodes.forEach(function (code) {
-      let startIndex = 0;
-      for (let page = 0; page < REGISTRY_CONFIG.maxPages; page += 1) {
-        const response = registryFetchJson_(REGISTRY_CONFIG.searchPath, {
+    postcodeAreas.forEach(function (postcodeArea) {
+      activityCodes.forEach(function (code) {
+        const items = fetchRegistrySearchPages_({
           company_status: status,
-          location: REGISTRY_CONFIG.location,
+          location: postcodeArea,
           sic_codes: code,
-          size: REGISTRY_CONFIG.pageSize,
-          start_index: startIndex,
         });
-        const items = Array.isArray(response.items) ? response.items : [];
         results.push.apply(results, items);
-        if (items.length < REGISTRY_CONFIG.pageSize) break;
-        startIndex += REGISTRY_CONFIG.pageSize;
-      }
+      });
     });
   });
 
@@ -37,6 +31,43 @@ function fetchRegistryCompanies_() {
     .sort(function (left, right) {
       return left[1].localeCompare(right[1]);
     });
+}
+
+function fetchRegistrySearchPages_(filters) {
+  const results = [];
+  let startIndex = 0;
+  let expectedHits = null;
+
+  while (true) {
+    const query = Object.assign({}, filters, {
+      size: REGISTRY_CONFIG.pageSize,
+      start_index: startIndex,
+    });
+    const response = registryFetchJson_(REGISTRY_CONFIG.searchPath, query);
+    const items = Array.isArray(response.items) ? response.items : [];
+    const hits = Number(response.hits);
+    if (expectedHits === null && Number.isFinite(hits) && hits >= 0)
+      expectedHits = hits;
+
+    if (!items.length) {
+      if (expectedHits !== null && startIndex < expectedHits)
+        throw new Error(
+          "Registry pagination stopped at " +
+            startIndex +
+            " of " +
+            expectedHits +
+            " results.",
+        );
+      break;
+    }
+
+    results.push.apply(results, items);
+    startIndex += items.length;
+    if (expectedHits !== null && startIndex >= expectedHits) break;
+    if (expectedHits === null && items.length < REGISTRY_CONFIG.pageSize) break;
+  }
+
+  return results;
 }
 
 function registryActivityCodes_() {

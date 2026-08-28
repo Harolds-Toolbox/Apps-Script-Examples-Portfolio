@@ -3,12 +3,10 @@ const REGISTRY_CONFIG = Object.freeze({
   baseUrl: "https://api.company-information.service.gov.uk",
   searchPath: "/advanced-search/companies",
   pageSize: 100,
-  maxPages: 50,
   maxAttempts: 4,
   reportSheet: "Registry Report",
   retainedSnapshots: 12,
   statuses: Object.freeze(["active"]),
-  location: "United Kingdom",
 });
 
 const REGISTRY_HEADERS = Object.freeze([

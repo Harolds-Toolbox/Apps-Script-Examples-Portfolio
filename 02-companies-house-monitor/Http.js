@@ -16,7 +16,11 @@ function registryFetchJson_(path, query) {
       const status = response.getResponseCode();
       const text = response.getContentText();
       if (status >= 200 && status < 300) return text ? JSON.parse(text) : {};
-      lastError = new Error("Registry API returned HTTP " + status);
+      lastError = new Error(
+        "Registry API returned HTTP " +
+          status +
+          (text ? ": " + text.slice(0, 500) : ""),
+      );
       if ([429, 500, 502, 503, 504].indexOf(status) === -1) throw lastError;
     } catch (error) {
       lastError = error;
