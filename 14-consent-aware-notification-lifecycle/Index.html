@@ -35,8 +35,17 @@
     <div id="content"></div>
     <div id="message"></div>
     <script>
-      const token = <?!= JSON.stringify(token) ?>;
-      const view = <?!= JSON.stringify(view) ?>;
+      function decodeBase64Utf8(value) {
+        const bytes = Uint8Array.from(atob(value), function (character) {
+          return character.charCodeAt(0);
+        });
+        return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+      }
+      const bootstrap = JSON.parse(
+        decodeBase64Utf8("<?!= bootstrapBase64 ?>"),
+      );
+      const token = bootstrap.token;
+      const view = bootstrap.view;
       const content = document.getElementById("content");
       const message = document.getElementById("message");
 
@@ -72,8 +81,18 @@
         );
         google.script.run
           .withSuccessHandler(function (result) {
-            content.innerHTML = "";
-            message.textContent = result.sent + " notification(s) sent.";
+            message.textContent =
+              result.sent +
+              " sent; " +
+              result.declined +
+              " declined; " +
+              result.failed +
+              " failed.";
+            if (result.failed) {
+              loadReview();
+            } else {
+              content.innerHTML = "";
+            }
           })
           .withFailureHandler(fail)
           .approveNotificationRecipients(token, ids);
@@ -89,11 +108,15 @@
           .unsubscribeWithToken(token);
       }
 
-      if (view === "review") {
+      function loadReview() {
         google.script.run
           .withSuccessHandler(renderReview)
           .withFailureHandler(fail)
           .getNotificationReview(token);
+      }
+
+      if (view === "review") {
+        loadReview();
       } else {
         content.innerHTML = '<p>Use the button below to stop future notifications. The link is single-use and expires automatically.</p><button onclick="unsubscribe()">Unsubscribe</button>';
       }

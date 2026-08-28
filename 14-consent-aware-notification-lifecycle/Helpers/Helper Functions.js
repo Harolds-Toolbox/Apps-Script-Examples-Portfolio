@@ -45,3 +45,41 @@ function removeSetupTriggers_(handlerNames) {
       ScriptApp.deleteTrigger(trigger);
     });
 }
+
+function parseDateValue_(value, label) {
+  if (value instanceof Date && Number.isFinite(value.getTime())) {
+    return new Date(value.getTime());
+  }
+  const text = String(value || "").trim(),
+    dayFirst = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/),
+    yearFirst = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  let year, month, day;
+  if (dayFirst) {
+    day = Number(dayFirst[1]);
+    month = Number(dayFirst[2]);
+    year = Number(dayFirst[3]);
+  } else if (yearFirst) {
+    year = Number(yearFirst[1]);
+    month = Number(yearFirst[2]);
+    day = Number(yearFirst[3]);
+  } else {
+    throw new Error(`${label || "Date"} must use DD/MM/YYYY or YYYY-MM-DD.`);
+  }
+  const parsed = new Date(year, month - 1, day);
+  if (
+    parsed.getFullYear() !== year ||
+    parsed.getMonth() !== month - 1 ||
+    parsed.getDate() !== day
+  ) {
+    throw new Error(`${label || "Date"} is not a valid calendar date.`);
+  }
+  return parsed;
+}
+
+function formatDateValue_(value, label) {
+  return Utilities.formatDate(
+    parseDateValue_(value, label),
+    Session.getScriptTimeZone(),
+    "d MMM yyyy",
+  );
+}

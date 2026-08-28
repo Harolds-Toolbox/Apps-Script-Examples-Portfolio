@@ -4,28 +4,46 @@ function prepareOpportunityNotifications() {
   try {
     const sheets = lifecycleSheets_(),
       subscribers = lifecycleObjects_("subscribers"),
+      allQueue = lifecycleObjects_("queue"),
       opportunities = lifecycleObjects_("opportunities").filter(
         (o) =>
           String(o.Status).toLowerCase() === "open" &&
           !o["Review Requested At"],
       );
+    assertLifecycleRecords_(subscribers, "Subscriber ID", {
+      emailHeader: "Email",
+    });
+    assertLifecycleRecords_(opportunities, "Opportunity ID", {
+      dateHeader: "Closing At",
+    });
     opportunities.forEach((opportunity) => {
       const matches = subscribers.filter((s) =>
         subscriberMatches_(s, opportunity),
       );
       if (!matches.length) return;
-      const batchId = Utilities.getUuid();
-      sheets.queue
-        .getRange(sheets.queue.getLastRow() + 1, 1, matches.length, 5)
-        .setValues(
-          matches.map((s) => [
-            batchId,
-            opportunity["Opportunity ID"],
-            s["Subscriber ID"],
-            "Pending",
-            "",
-          ]),
-        );
+      const existingQueue = allQueue.filter(
+          (item) =>
+            String(item["Opportunity ID"]) ===
+              String(opportunity["Opportunity ID"]) &&
+            ["Pending", "Failed"].includes(String(item.Decision)),
+        ),
+        batchId = existingQueue.length
+          ? String(existingQueue[0]["Batch ID"])
+          : Utilities.getUuid();
+      if (!existingQueue.length) {
+        sheets.queue
+          .getRange(sheets.queue.getLastRow() + 1, 1, matches.length, 5)
+          .setValues(
+            matches.map((s) => [
+              batchId,
+              opportunity["Opportunity ID"],
+              s["Subscriber ID"],
+              "Pending",
+              "",
+            ]),
+          );
+      }
+      invalidateLifecycleTokens_("review", batchId);
       const token = issueLifecycleToken_(
         "review",
         batchId,
@@ -61,12 +79,11 @@ function prepareOpportunityNotifications() {
 }
 
 function getNotificationReview(token) {
-  requireReviewer_();
-  const ref = readLifecycleToken_(token, "review", false),
+  const ref = readLifecycleToken_(token, "review"),
     queue = lifecycleObjects_("queue").filter(
       (q) =>
         String(q["Batch ID"]) === ref.subjectId &&
-        String(q.Decision) === "Pending",
+        ["Pending", "Failed"].includes(String(q.Decision)),
     ),
     subscribers = lifecycleObjects_("subscribers"),
     opportunity = lifecycleObjects_("opportunities").find(
@@ -93,45 +110,76 @@ function getNotificationReview(token) {
 }
 
 function approveNotificationRecipients(token, subscriberIds) {
-  requireReviewer_();
-  const ref = readLifecycleToken_(token, "review", true),
-    approved = new Set((subscriberIds || []).map(String)),
-    sheets = lifecycleSheets_(),
-    opportunity = lifecycleObjects_("opportunities").find(
-      (o) => String(o["Opportunity ID"]) === ref.contextId,
-    ),
-    subscribers = lifecycleObjects_("subscribers"),
-    queue = lifecycleObjects_("queue").filter(
-      (q) =>
-        String(q["Batch ID"]) === ref.subjectId &&
-        String(q.Decision) === "Pending",
-    );
-  let sent = 0;
-  queue.forEach((item) => {
-    const subscriber = subscribers.find(
-        (s) => String(s["Subscriber ID"]) === String(item["Subscriber ID"]),
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const ref = readLifecycleTokenUnlocked_(token, "review"),
+      approved = new Set((subscriberIds || []).map(String)),
+      sheets = lifecycleSheets_(),
+      opportunity = lifecycleObjects_("opportunities").find(
+        (o) => String(o["Opportunity ID"]) === ref.contextId,
       ),
-      isApproved =
-        subscriber &&
-        approved.has(String(item["Subscriber ID"])) &&
-        String(subscriber["Consent Status"]).toLowerCase() === "subscribed";
-    if (isApproved) {
-      sendOpportunityEmail_(subscriber, opportunity);
-      sent++;
+      subscribers = lifecycleObjects_("subscribers"),
+      queue = lifecycleObjects_("queue").filter(
+        (q) =>
+          String(q["Batch ID"]) === ref.subjectId &&
+          ["Pending", "Failed"].includes(String(q.Decision)),
+      );
+    if (!opportunity) throw new Error("Opportunity not found.");
+    assertLifecycleRecords_(subscribers, "Subscriber ID", {
+      emailHeader: "Email",
+    });
+    let sent = 0,
+      failed = 0,
+      declined = 0;
+    queue.forEach((item) => {
+      const subscriber = subscribers.find(
+          (s) => String(s["Subscriber ID"]) === String(item["Subscriber ID"]),
+        ),
+        selected = approved.has(String(item["Subscriber ID"])),
+        subscribed =
+          subscriber &&
+          String(subscriber["Consent Status"]).toLowerCase() === "subscribed";
+      if (!selected || !subscribed) {
+        sheets.queue
+          .getRange(item._row, 4, 1, 2)
+          .setValues([[subscribed ? "Declined" : "Consent Withdrawn", ""]]);
+        declined++;
+        return;
+      }
+      sheets.queue
+        .getRange(item._row, 4, 1, 2)
+        .setValues([["Sending", new Date()]]);
+      SpreadsheetApp.flush();
+      try {
+        sendOpportunityEmail_(subscriber, opportunity);
+        sheets.queue
+          .getRange(item._row, 4, 1, 2)
+          .setValues([["Sent", new Date()]]);
+        sent++;
+      } catch (error) {
+        sheets.queue.getRange(item._row, 4).setValue("Failed");
+        auditLifecycle_(
+          item["Subscriber ID"],
+          "NOTIFICATION_FAILED",
+          String(error.message || error).slice(0, 300),
+        );
+        failed++;
+      }
+    });
+    if (!failed) {
+      consumeLifecycleTokenUnlocked_(ref.tokenRow);
+      sheets.opportunities.getRange(opportunity._row, 8).setValue(new Date());
     }
-    sheets.queue
-      .getRange(item._row, 4, 1, 2)
-      .setValues([
-        [isApproved ? "Approved" : "Declined", isApproved ? new Date() : ""],
-      ]);
-  });
-  sheets.opportunities.getRange(opportunity._row, 8).setValue(new Date());
-  auditLifecycle_(
-    opportunity["Opportunity ID"],
-    "NOTIFICATIONS_REVIEWED",
-    sent + " sent",
-  );
-  return { sent };
+    auditLifecycle_(
+      opportunity["Opportunity ID"],
+      "NOTIFICATIONS_REVIEWED",
+      `${sent} sent; ${failed} failed; ${declined} declined`,
+    );
+    return { sent, failed, declined };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 function sendOpportunityEmail_(subscriber, opportunity) {
@@ -159,7 +207,7 @@ function sendOpportunityEmail_(subscriber, opportunity) {
       escapeLifecycle_(opportunity.Region) +
       "<br>Closing: " +
       escapeLifecycle_(
-        new Date(opportunity["Closing At"]).toLocaleDateString(),
+        formatDateValue_(opportunity["Closing At"], "Closing At"),
       ) +
       '</p><p><a href="' +
       url +
@@ -175,11 +223,4 @@ function escapeLifecycle_(v) {
         c
       ],
   );
-}
-function requireReviewer_() {
-  if (
-    Session.getActiveUser().getEmail().toLowerCase() !==
-    lifecycleConfig_().reviewer.toLowerCase()
-  )
-    throw new Error("Reviewer access is required.");
 }

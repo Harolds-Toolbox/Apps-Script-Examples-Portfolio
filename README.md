@@ -22,8 +22,8 @@ Each numbered directory is its own Apps Script project. They are not intended to
 | [`10-dynamic-project-intake-tracker`](10-dynamic-project-intake-tracker/) | Creates and archives repeating project blocks in a bound Sheet using stable IDs and configured validation. |
 | [`11-self-healing-webhook-manager`](11-self-healing-webhook-manager/) | Checks provider webhook registrations and reactivates, deduplicates or rotates them when needed. |
 | [`12-cross-system-completion-reconciliation`](12-cross-system-completion-reconciliation/) | Compares two paginated systems and produces a consolidated missing-completion report. |
-| [`13-configuration-management-dialog`](13-configuration-management-dialog/) | Provides a locked, validated dialog for maintaining ordered Sheet configuration. |
-| [`14-consent-aware-notification-lifecycle`](14-consent-aware-notification-lifecycle/) | Matches preferences, adds reviewer approval and maintains unsubscribe/retention token state. |
+| [`13-configuration-management-dialog`](13-configuration-management-dialog/) | Maintains ordered Sheet configuration through a revision-aware dialog with rollback, Unicode-safe bootstrap and formula-safe text handling. |
+| [`14-consent-aware-notification-lifecycle`](14-consent-aware-notification-lifecycle/) | Matches preferences, issues hashed one-time review/unsubscribe links and records retry-aware delivery and retention state. |
 
 ## Common project layout
 

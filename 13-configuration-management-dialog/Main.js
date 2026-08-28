@@ -3,6 +3,6 @@ function runConfigurationManager() {
   return openConfigurationManager();
 }
 
-function runConfigurationSave(items) {
-  return saveConfigurationItems(items);
+function runConfigurationSave(payload) {
+  return saveConfigurationItems(payload);
 }

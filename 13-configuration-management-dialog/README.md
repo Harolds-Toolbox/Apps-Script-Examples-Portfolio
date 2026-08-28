@@ -7,10 +7,10 @@ This bound-Sheet dialog edits a small ordered configuration table without exposi
 ```text
 custom menu → read Configuration rows → encoded HTML dialog → add/edit/delete/drag rows
                                                         ↓
-server validation → document lock → atomic table rewrite → reapply calculated formula
+server validation → document lock → revision check → guarded table rewrite → reapply formula
 ```
 
-`Main.js` contains the open and save wrappers. The calculated `Display Label` column is rebuilt with an R1C1 formula after each successful save.
+`Main.js` contains the open and save wrappers. The calculated `Display Label` column is rebuilt with an R1C1 formula after each successful save. Each dialog carries a revision fingerprint so an older open dialog cannot silently overwrite a newer save. If a Sheet write fails, the previous cell values and formulas are restored before the error is returned.
 
 ## One-time setup
 
@@ -31,6 +31,10 @@ There are no Script Properties. The editable headers and sheet name live in `Hel
 3. Confirm `Sort Order` is sequential and `Display Label` contains formulas rather than pasted text.
 4. Reopen the dialog, edit one item, deactivate another and delete the third.
 5. Try duplicate names and a blank name; both saves should be rejected without partially changing the Sheet.
-6. Open the Sheet in two sessions and confirm the document lock prevents overlapping structural writes.
+6. Include accented and non-Latin text and confirm it survives closing and reopening the dialog.
+7. Enter a value beginning with `=` and confirm it is stored as text rather than executed as a formula.
+8. Open the dialog in two sessions, save from the first and confirm the stale second session is rejected until it is reopened.
+
+The browser test workbook has been exercised with accented and non-Latin text, a value beginning with `=` and two simultaneously open dialogs. Saved Unicode text survived reopening, the formula-like value remained literal text and the stale dialog was rejected. The sample row was restored after the test.
 
 The field schema is deliberately small. Changing it requires coordinated updates to `Helpers/Consts.js`, `Configuration.js` and `Index.html`.

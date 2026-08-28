@@ -10,4 +10,6 @@ const CONFIG_UI = Object.freeze({
     "Display Label",
   ],
   editableColumns: 5,
+  maxItems: 250,
+  maxLengths: Object.freeze({ item: 160, address: 500, region: 120 }),
 });

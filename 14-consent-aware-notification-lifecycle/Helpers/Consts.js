@@ -31,10 +31,10 @@ const LIFECYCLE = Object.freeze({
       "Opportunity ID",
       "Subscriber ID",
       "Decision",
-      "Sent At",
+      "Delivery At",
     ],
     tokens: [
-      "Token",
+      "Token Hash",
       "Purpose",
       "Subject ID",
       "Context ID",
@@ -53,11 +53,31 @@ function lifecycleConfig_() {
     throw new Error(
       "Set LIFECYCLE_SPREADSHEET_ID, LIFECYCLE_WEB_APP_URL and LIFECYCLE_REVIEWER_EMAIL.",
     );
+  const tokenHours = Number(p.getProperty("LIFECYCLE_TOKEN_HOURS") || 72),
+    retentionDays = Number(
+      p.getProperty("LIFECYCLE_RETENTION_DAYS") || 365,
+    );
+  if (!/^https:\/\/.+\/exec(?:$|[?#])/.test(webAppUrl)) {
+    throw new Error("LIFECYCLE_WEB_APP_URL must be a deployed HTTPS /exec URL.");
+  }
+  if (!/^\S+@\S+\.\S+$/.test(reviewer)) {
+    throw new Error("LIFECYCLE_REVIEWER_EMAIL must be a valid email address.");
+  }
+  if (!Number.isFinite(tokenHours) || tokenHours < 1 || tokenHours > 720) {
+    throw new Error("LIFECYCLE_TOKEN_HOURS must be between 1 and 720.");
+  }
+  if (
+    !Number.isFinite(retentionDays) ||
+    retentionDays < 1 ||
+    retentionDays > 3650
+  ) {
+    throw new Error("LIFECYCLE_RETENTION_DAYS must be between 1 and 3650.");
+  }
   return {
     spreadsheetId,
     webAppUrl,
     reviewer,
-    tokenHours: Number(p.getProperty("LIFECYCLE_TOKEN_HOURS") || 72),
-    retentionDays: Number(p.getProperty("LIFECYCLE_RETENTION_DAYS") || 365),
+    tokenHours,
+    retentionDays,
   };
 }

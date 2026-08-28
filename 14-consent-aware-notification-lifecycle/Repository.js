@@ -27,3 +27,25 @@ function auditLifecycle_(subjectId, action, detail) {
     detail || "",
   ]);
 }
+
+function assertLifecycleRecords_(records, idHeader, options) {
+  const seen = new Set();
+  records.forEach((record) => {
+    const id = String(record[idHeader] || "").trim();
+    if (!id) throw new Error(`${idHeader} is required on row ${record._row}.`);
+    if (seen.has(id)) throw new Error(`Duplicate ${idHeader}: ${id}.`);
+    seen.add(id);
+    if (options && options.emailHeader) {
+      const email = String(record[options.emailHeader] || "").trim();
+      if (!/^\S+@\S+\.\S+$/.test(email)) {
+        throw new Error(`Invalid email on row ${record._row}.`);
+      }
+    }
+    if (options && options.dateHeader) {
+      parseDateValue_(
+        record[options.dateHeader],
+        `${options.dateHeader} on row ${record._row}`,
+      );
+    }
+  });
+}

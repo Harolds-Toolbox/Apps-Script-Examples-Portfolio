@@ -70,8 +70,17 @@
     </div>
     <div class="list" id="list"></div>
     <script>
-      const bootstrap = JSON.parse(atob("<?!= bootstrapBase64 ?>"));
+      function decodeBase64Utf8(value) {
+        const bytes = Uint8Array.from(atob(value), (character) =>
+          character.charCodeAt(0),
+        );
+        return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+      }
+      const bootstrap = JSON.parse(
+        decodeBase64Utf8("<?!= bootstrapBase64 ?>"),
+      );
       let items = bootstrap.items;
+      let revision = bootstrap.revision;
       const escapeHtml = (v) =>
         String(v || "").replace(
           /[&<>"']/g,
@@ -123,11 +132,12 @@
         const msg = document.getElementById("message");
         msg.textContent = "Saving…";
         google.script.run
-          .withSuccessHandler(
-            (r) => (msg.textContent = `Saved ${r.saved} item(s).`),
-          )
+          .withSuccessHandler((r) => {
+            revision = r.revision;
+            msg.textContent = `Saved ${r.saved} item(s).`;
+          })
           .withFailureHandler((e) => (msg.textContent = e.message))
-          .saveConfigurationItems(items);
+          .saveConfigurationItems({ items, revision });
       }
       render();
     </script>

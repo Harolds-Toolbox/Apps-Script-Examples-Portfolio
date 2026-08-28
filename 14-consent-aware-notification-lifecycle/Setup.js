@@ -50,6 +50,23 @@ function installProjectTriggers() {
     .create();
 }
 
+function upgradeProject() {
+  const spreadsheet = SpreadsheetApp.openById(
+    PropertiesService.getScriptProperties().getProperty(
+      "LIFECYCLE_SPREADSHEET_ID",
+    ),
+  );
+  Object.keys(LIFECYCLE.headers).forEach(function (key) {
+    const sheet = spreadsheet.getSheetByName(LIFECYCLE[key]);
+    if (!sheet) throw new Error(`Missing sheet: ${LIFECYCLE[key]}.`);
+    sheet
+      .getRange(1, 1, 1, LIFECYCLE.headers[key].length)
+      .setValues([LIFECYCLE.headers[key]]);
+    sheet.setFrozenRows(1);
+  });
+  return { upgraded: true };
+}
+
 function setupConsentLifecycle() {
   return setupProject();
 }
