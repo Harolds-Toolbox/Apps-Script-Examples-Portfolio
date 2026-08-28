@@ -3,72 +3,195 @@
   <head>
     <base target="_top">
     <style>
-      :root { --ink:#17202a; --muted:#667085; --line:#d0d5dd; --accent:#175cd3; --bg:#f5f7fa; --ok:#067647; --error:#b42318; font-family:Arial,sans-serif; }
+      :root {
+        --ink:#17202a; --muted:#667085; --line:#d0d5dd; --accent:#175cd3;
+        --accent-dark:#123f91; --bg:#f4f7fb; --ok:#067647; --error:#b42318;
+        font-family:Inter,Arial,sans-serif;
+      }
       * { box-sizing:border-box; }
       body { margin:0; min-height:100vh; background:linear-gradient(135deg,#eef4ff,var(--bg)); color:var(--ink); }
-      main { width:min(960px,calc(100% - 32px)); margin:32px auto; display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:24px; }
-      .panel { background:#fff; border:1px solid var(--line); border-radius:16px; padding:24px; box-shadow:0 18px 50px rgba(16,24,40,.08); }
-      h1 { margin:0 0 6px; font-size:28px; }
-      .intro { margin:0 0 22px; color:var(--muted); }
+      main { width:min(1040px,calc(100% - 32px)); margin:32px auto; display:grid; grid-template-columns:minmax(0,1fr) 310px; gap:24px; }
+      .panel { background:#fff; border:1px solid var(--line); border-radius:18px; padding:26px; box-shadow:0 18px 50px rgba(16,24,40,.08); }
+      .eyebrow { margin:0 0 8px; color:var(--accent); font-size:12px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+      h1 { margin:0 0 7px; font-size:30px; line-height:1.15; }
+      h2 { margin:0 0 12px; font-size:18px; }
+      .intro,.hint { color:var(--muted); }
+      .intro { margin:0 0 24px; line-height:1.5; }
+      fieldset { margin:0 0 22px; padding:0; border:0; }
+      legend { margin-bottom:9px; font-size:13px; font-weight:800; }
+      .switch { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:5px; border:1px solid var(--line); border-radius:12px; background:#f8fafc; }
+      .switch label { position:relative; display:block; }
+      .switch input { position:absolute; opacity:0; pointer-events:none; }
+      .switch span { display:block; padding:11px 12px; border-radius:8px; text-align:center; color:var(--muted); font-weight:800; cursor:pointer; }
+      .switch input:checked + span { background:#fff; color:var(--accent); box-shadow:0 2px 8px rgba(16,24,40,.12); }
+      .switch input:focus-visible + span { outline:3px solid rgba(23,92,211,.22); }
       .grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
-      label { display:grid; gap:6px; font-size:13px; font-weight:700; }
+      label.field { display:grid; gap:6px; font-size:13px; font-weight:700; }
       label.full { grid-column:1/-1; }
-      input,textarea { width:100%; border:1px solid var(--line); border-radius:8px; padding:11px 12px; font:inherit; }
-      textarea { min-height:100px; resize:vertical; }
-      input:focus,textarea:focus { outline:3px solid rgba(23,92,211,.16); border-color:var(--accent); }
-      button { margin-top:20px; min-height:46px; width:100%; border:0; border-radius:9px; background:var(--accent); color:#fff; font-weight:800; cursor:pointer; }
+      input,textarea,select { width:100%; border:1px solid var(--line); border-radius:8px; padding:11px 12px; font:inherit; background:#fff; color:var(--ink); }
+      textarea { min-height:94px; resize:vertical; }
+      input:focus,textarea:focus,select:focus { outline:3px solid rgba(23,92,211,.16); border-color:var(--accent); }
+      .actions { display:grid; grid-template-columns:1fr auto; gap:10px; margin-top:22px; }
+      button { min-height:46px; border:0; border-radius:9px; padding:0 18px; font:inherit; font-weight:800; cursor:pointer; }
+      #generate { background:var(--accent); color:#fff; }
+      #generate:hover { background:var(--accent-dark); }
+      #example { background:#eef4ff; color:var(--accent); }
       button:disabled { opacity:.55; cursor:wait; }
       #status { min-height:22px; margin-top:12px; color:var(--muted); }
       #status.error { color:var(--error); } #status.success { color:var(--ok); }
-      aside h2 { margin-top:0; font-size:17px; }
-      aside ol { padding-left:20px; color:var(--muted); }
-      @media(max-width:760px){ main{grid-template-columns:1fr}.grid{grid-template-columns:1fr}label.full{grid-column:auto} }
+      aside ol { margin:0; padding-left:20px; color:var(--muted); line-height:1.55; }
+      .template-note { margin:18px 0 0; padding:14px; border-radius:10px; background:#f8fafc; color:var(--muted); line-height:1.45; }
+      code { color:var(--ink); }
+      @media(max-width:780px) { main{grid-template-columns:1fr}.grid{grid-template-columns:1fr}label.full{grid-column:auto}.actions{grid-template-columns:1fr} }
     </style>
   </head>
   <body>
     <main>
       <section class="panel">
-        <h1>Document generator</h1>
-        <p class="intro">Complete the form to create a PDF from a Google Docs template.</p>
+        <p class="eyebrow">Google Apps Script example</p>
+        <h1>PDF document generator</h1>
+        <p class="intro">Enter the project details, choose a Google Doc or Google Sheet layout, and download the finished PDF.</p>
+
         <form id="form">
+          <fieldset>
+            <legend>Template source</legend>
+            <div class="switch" role="radiogroup" aria-describedby="template-description">
+              <label><input type="radio" name="templateType" value="document" checked><span>Google Doc</span></label>
+              <label><input type="radio" name="templateType" value="spreadsheet"><span>Google Sheet</span></label>
+            </div>
+            <p class="hint" id="template-description">Best for a narrative, letter-style PDF.</p>
+          </fieldset>
+
           <div class="grid">
-            <label>Reference<input id="reference" maxlength="40" placeholder="REQ-1042" required></label>
-            <label>Start date<input id="startDate" type="date" required></label>
-            <label class="full">Customer name<input id="customerName" maxlength="120" required></label>
-            <label class="full">Customer address<textarea id="customerAddress" maxlength="500" required></textarea></label>
-            <label class="full">Project title<input id="projectTitle" maxlength="160" required></label>
-            <label>Total<input id="total" type="number" min="0" step="0.01" required></label>
-            <label class="full">Notes<textarea id="notes" maxlength="2000"></textarea></label>
+            <label class="field">Reference<input id="reference" maxlength="40" placeholder="DEMO-2048" required></label>
+            <label class="field">Start date<input id="startDate" type="date" required></label>
+            <label class="field full">Customer name<input id="customerName" maxlength="120" placeholder="Sample Customer" required></label>
+            <label class="field full">Customer address<textarea id="customerAddress" maxlength="500" placeholder="10 Example Street&#10;Sample Town&#10;AB1 2CD" required></textarea></label>
+            <label class="field full">Project title<input id="projectTitle" maxlength="160" placeholder="Community workspace refresh" required></label>
+            <label class="field">Currency<select id="currency" required><option value="GBP">GBP — £</option><option value="EUR">EUR — €</option><option value="USD">USD — $</option></select></label>
+            <label class="field">Total<input id="total" type="number" min="0" max="999999999.99" step="0.01" placeholder="1250.50" required></label>
+            <label class="field full">Notes<textarea id="notes" maxlength="2000" placeholder="Optional delivery or project notes"></textarea></label>
           </div>
-          <button id="generate" type="submit">Generate PDF</button>
-          <div id="status" role="status"></div>
+
+          <div class="actions">
+            <button id="generate" type="submit">Download PDF</button>
+            <button id="example" type="button">Load test data</button>
+          </div>
+          <div id="status" role="status" aria-live="polite"></div>
         </form>
       </section>
+
       <aside class="panel">
-        <h2>What happens next</h2>
-        <ol><li>Your input is validated.</li><li>A temporary template copy is populated.</li><li>The copy is converted to PDF.</li><li>The browser downloads it.</li><li>The temporary document is moved to Trash.</li></ol>
+        <h2>Generation flow</h2>
+        <ol>
+          <li>Validate the submitted values on the server.</li>
+          <li>Copy the selected Drive template.</li>
+          <li>Replace matching <code>{{TOKENS}}</code>.</li>
+          <li>Export the temporary file as PDF.</li>
+          <li>Return it directly to this browser.</li>
+          <li>Move the temporary source to Trash.</li>
+        </ol>
+        <p class="template-note" id="template-note"><strong>Google Doc:</strong> preserves document typography, headers, footers, tables and page layout.</p>
       </aside>
     </main>
+
     <script>
       const form = document.getElementById('form');
-      const button = document.getElementById('generate');
+      const generateButton = document.getElementById('generate');
+      const exampleButton = document.getElementById('example');
       const status = document.getElementById('status');
-      function setStatus(text, type) { status.textContent = text; status.className = type || ''; }
-      function download(result) {
-        const link = document.createElement('a');
-        link.href = 'data:' + result.mimeType + ';base64,' + result.base64;
-        link.download = result.fileName;
-        document.body.appendChild(link); link.click(); link.remove();
+      const description = document.getElementById('template-description');
+      const templateNote = document.getElementById('template-note');
+
+      function selectedTemplateType() {
+        return document.querySelector('input[name="templateType"]:checked').value;
       }
+
+      function updateTemplateDescription() {
+        const usesDocument = selectedTemplateType() === 'document';
+        description.textContent = usesDocument
+          ? 'Best for a narrative, letter-style PDF.'
+          : 'Best for a structured form, estimate or tabular layout.';
+        templateNote.innerHTML = usesDocument
+          ? '<strong>Google Doc:</strong> preserves document typography, headers, footers, tables and page layout.'
+          : '<strong>Google Sheet:</strong> preserves cell formatting, merged ranges, row heights, column widths and print layout.';
+      }
+
+      function setStatus(text, type) {
+        status.textContent = text;
+        status.className = type || '';
+      }
+
+      function downloadPdf(result) {
+        const binary = atob(result.base64);
+        const bytes = new Uint8Array(binary.length);
+        for (let index = 0; index < binary.length; index++) bytes[index] = binary.charCodeAt(index);
+
+        const url = URL.createObjectURL(new Blob([bytes], { type: result.mimeType }));
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = result.fileName;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+      }
+
+      function formValue(id) {
+        return document.getElementById(id).value;
+      }
+
+      function loadTestData() {
+        const values = {
+          reference: 'DEMO-2048',
+          customerName: 'Sample Customer',
+          customerAddress: '10 Example Street\nSample Town\nAB1 2CD',
+          projectTitle: 'Community workspace refresh',
+          startDate: '2026-09-14',
+          currency: 'GBP',
+          total: '1250.50',
+          notes: 'Synthetic portfolio test data. No real customer or project is represented.'
+        };
+        Object.keys(values).forEach(function (id) { document.getElementById(id).value = values[id]; });
+        setStatus('Synthetic test data loaded.');
+      }
+
+      document.querySelectorAll('input[name="templateType"]').forEach(function (radio) {
+        radio.addEventListener('change', updateTemplateDescription);
+      });
+      exampleButton.addEventListener('click', loadTestData);
+
       form.addEventListener('submit', function (event) {
-        event.preventDefault(); button.disabled = true; setStatus('Generating…');
-        const input = ['reference','customerName','customerAddress','projectTitle','startDate','total','notes']
-          .reduce(function (value, id) { value[id] = document.getElementById(id).value; return value; }, {});
-        google.script.run.withSuccessHandler(function (result) {
-          download(result); button.disabled = false; setStatus('PDF generated successfully.', 'success');
-        }).withFailureHandler(function (error) {
-          button.disabled = false; setStatus(error && error.message ? error.message : 'Generation failed.', 'error');
-        }).generateDocumentPdf(input);
+        event.preventDefault();
+        generateButton.disabled = true;
+        exampleButton.disabled = true;
+        setStatus('Generating your PDF…');
+
+        const input = {
+          templateType: selectedTemplateType(),
+          reference: formValue('reference'),
+          customerName: formValue('customerName'),
+          customerAddress: formValue('customerAddress'),
+          projectTitle: formValue('projectTitle'),
+          startDate: formValue('startDate'),
+          currency: formValue('currency'),
+          total: formValue('total'),
+          notes: formValue('notes')
+        };
+
+        google.script.run
+          .withSuccessHandler(function (result) {
+            downloadPdf(result);
+            generateButton.disabled = false;
+            exampleButton.disabled = false;
+            setStatus('PDF downloaded from the ' + (result.templateType === 'document' ? 'Google Doc' : 'Google Sheet') + ' template.', 'success');
+          })
+          .withFailureHandler(function (error) {
+            generateButton.disabled = false;
+            exampleButton.disabled = false;
+            setStatus(error && error.message ? error.message : 'PDF generation failed.', 'error');
+          })
+          .generateDocumentPdf(input);
       });
     </script>
   </body>

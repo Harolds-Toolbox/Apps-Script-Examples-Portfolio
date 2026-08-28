@@ -6,7 +6,7 @@ Fourteen complete, public-safe Google Apps Script projects based on business aut
 
 | Project | What it demonstrates |
 | --- | --- |
-| [Document generator](01-document-generator/) | Web form, Google Docs templating, PDF generation, Drive cleanup |
+| [Dual-template document generator](01-document-generator/) | Web form, Google Docs/Sheets templating, direct PDF download, Drive cleanup |
 | [Public registry monitor](02-public-registry-monitor/) | Authenticated API pagination, filtering, CSV snapshots, comparisons, retention |
 | [Operations dashboard](03-operations-dashboard/) | Responsive web app, multi-Sheet aggregation, reconciliation, access control |
 | [Procurement approval workflow](04-procurement-approval-workflow/) | Signed actions, guarded state transitions, audit history, document generation |
