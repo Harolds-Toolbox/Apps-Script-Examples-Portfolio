@@ -1,45 +1,47 @@
 # Procurement approval workflow
 
-A complete request-and-review web app with signed email actions, guarded workflow transitions, an audit log, additional-information handling and optional PDF purchase-record generation.
+This web app handles a request from submission through review, requests for more information, approval or rejection. Each transition is checked against the current record under a script lock and written to an audit log.
 
-## Workflow
-
-```text
-PENDING ── approve ──────────────→ APPROVED
-   │                                  │
-   ├── reject ───────────────────→ REJECTED
-   │
-   └── request information → NEEDS_INFORMATION → requester responds → PENDING
-```
-
-Every state change is checked against the current stored state while holding a script lock. Email-action tokens contain the reference, action, expiry and record version, and are signed with HMAC-SHA256. A completed action increments the version and invalidates previously issued links.
-
-## Sheets
-
-Create a spreadsheet with these tabs and exact headers.
-
-**Requests**
+## Flow
 
 ```text
-Reference | Requester Email | Supplier | Description | Currency | Amount | Status | Information Request | Information Response | Created At | Updated At | Reviewer Email | Version
+requester submits → PENDING ─┬→ reviewer approves → APPROVED → optional PDF
+                             ├→ reviewer rejects  → REJECTED
+                             └→ asks for detail   → NEEDS_INFORMATION → requester replies → PENDING
+                                      │
+                                      └→ signed, expiring, versioned action links + audit rows
 ```
 
-**Audit Log**
+`Main.js` contains wrappers for submission, review actions and approved PDF generation. Action signatures include the reference, action, expiry and current record version, so a completed action invalidates older links.
 
-```text
-Timestamp | Reference | Action | Actor | Metadata
-```
+## One-time setup
+
+1. Set `SETUP_FOLDER_ID` in `Setup.js`.
+2. Push the project and run `setupProject()`.
+3. Approve Drive, Sheets and file-creation access. Setup creates the workflow spreadsheet and a formatted Google Sheet PDF template.
+4. Add the remaining Script Properties below. Generate a random link secret of at least 32 characters.
+5. Deploy as a web app for signed-in users, then add the deployment `/exec` URL as `PROCUREMENT_WEB_APP_URL`.
+6. Run `installProjectTriggers()` only after reviewer emails are configured.
 
 ## Script Properties
 
-- `PROCUREMENT_SPREADSHEET_ID`
-- `PROCUREMENT_REVIEWER_EMAILS` — comma-separated reviewers
-- `PROCUREMENT_LINK_SECRET` — at least 32 random characters
-- `PROCUREMENT_WEB_APP_URL` — deployed `/exec` URL
-- `PROCUREMENT_DOCUMENT_TEMPLATE_ID` — optional Google Sheets template for generated PDFs
+| Property | Set by setup | Notes |
+| --- | --- | --- |
+| `PROCUREMENT_SPREADSHEET_ID` | Yes | `Requests` and `Audit Log` storage. |
+| `PROCUREMENT_DOCUMENT_TEMPLATE_ID` | Yes | Sheet template used for approved PDFs. |
+| `PROCUREMENT_REVIEWER_EMAILS` | No | Comma-separated reviewers. |
+| `PROCUREMENT_LINK_SECRET` | No | HMAC secret, minimum 32 random characters. |
+| `PROCUREMENT_WEB_APP_URL` | No | Deployed `/exec` URL. |
 
-## Deploy
+The first complete run asks for Sheets, Drive, email, user identity and trigger permissions.
 
-Deploy for signed-in domain users. Run `installProcurementTrigger()` to add a periodic notification job. The server checks reviewer identity even when a request arrived through a correctly signed URL.
+## Testing the workflow
 
-The optional document template may contain `{{REFERENCE}}`, `{{SUPPLIER}}`, `{{DESCRIPTION}}`, `{{CURRENCY}}`, `{{AMOUNT}}`, `{{REQUESTER}}` and `{{APPROVED_AT}}`.
+1. Use accounts you control as requester and reviewer.
+2. Submit a low-value fictional request from the web app and confirm a `PENDING` row and audit entry are created.
+3. Request more information, reply as the requester and confirm the row returns to `PENDING` with a higher version.
+4. Try an older signed link and confirm it is rejected.
+5. Approve the request and run `runApprovedProcurementPdf(reference)` as a reviewer.
+6. Confirm the PDF is populated and its temporary Sheet copy is moved to Trash.
+
+The generated template tokens are `{{REFERENCE}}`, `{{SUPPLIER}}`, `{{DESCRIPTION}}`, `{{CURRENCY}}`, `{{AMOUNT}}`, `{{REQUESTER}}` and `{{APPROVED_AT}}`.

@@ -1,1 +1,135 @@
-<!doctype html><html><head><base target="_top"><style>body{font:14px system-ui;margin:0;color:#17202a}.toolbar{position:sticky;top:0;background:white;padding:16px;border-bottom:1px solid #ddd;display:flex;gap:8px}.list{padding:12px}.row{display:grid;grid-template-columns:24px 1.1fr 1.6fr 1fr 70px 32px;gap:8px;align-items:center;padding:8px;border:1px solid #ddd;border-radius:6px;margin:7px 0;background:white}.handle{cursor:grab;color:#667085}input,select{padding:8px;min-width:0;box-sizing:border-box;width:100%}button{padding:9px 13px;border:0;border-radius:5px;background:#1769aa;color:white}.delete{background:#b42318;padding:7px}.hint,#message{color:#667085}.dragging{opacity:.45}</style></head><body><div class="toolbar"><button onclick="addRow()">Add item</button><button onclick="save()">Save configuration</button><span id="message"></span></div><div class="list" id="list"></div><script>const bootstrap=JSON.parse(atob('<?!= bootstrapBase64 ?>'));let items=bootstrap.items;const escapeHtml=v=>String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));function render(){const list=document.getElementById('list');list.innerHTML=items.map((x,i)=>`<div class="row" draggable="true" data-i="${i}"><span class="handle">↕</span><input aria-label="Item" value="${escapeHtml(x.item)}" oninput="items[${i}].item=this.value"><input aria-label="Address" value="${escapeHtml(x.address)}" oninput="items[${i}].address=this.value"><input aria-label="Region" value="${escapeHtml(x.region)}" oninput="items[${i}].region=this.value"><label><input type="checkbox" ${x.active?'checked':''} onchange="items[${i}].active=this.checked"> Active</label><button class="delete" onclick="items.splice(${i},1);render()">×</button></div>`).join('')||'<p class="hint">Add the first configuration item.</p>';wireDrag();}function addRow(){items.push({item:'',address:'',region:'',active:true});render();document.querySelector('.row:last-child input').focus()}function wireDrag(){document.querySelectorAll('.row').forEach(row=>{row.ondragstart=e=>{e.dataTransfer.setData('text/plain',row.dataset.i);row.classList.add('dragging')};row.ondragend=()=>row.classList.remove('dragging');row.ondragover=e=>e.preventDefault();row.ondrop=e=>{e.preventDefault();const from=Number(e.dataTransfer.getData('text/plain')),to=Number(row.dataset.i),moved=items.splice(from,1)[0];items.splice(to,0,moved);render()}})}function save(){const msg=document.getElementById('message');msg.textContent='Saving…';google.script.run.withSuccessHandler(r=>msg.textContent=`Saved ${r.saved} item(s).`).withFailureHandler(e=>msg.textContent=e.message).saveConfigurationItems(items)}render();</script></body></html>
+<!doctype html>
+<html>
+  <head>
+    <base target="_top" />
+    <style>
+      body {
+        font: 14px system-ui;
+        margin: 0;
+        color: #17202a;
+      }
+      .toolbar {
+        position: sticky;
+        top: 0;
+        background: white;
+        padding: 16px;
+        border-bottom: 1px solid #ddd;
+        display: flex;
+        gap: 8px;
+      }
+      .list {
+        padding: 12px;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 24px 1.1fr 1.6fr 1fr 70px 32px;
+        gap: 8px;
+        align-items: center;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        margin: 7px 0;
+        background: white;
+      }
+      .handle {
+        cursor: grab;
+        color: #667085;
+      }
+      input,
+      select {
+        padding: 8px;
+        min-width: 0;
+        box-sizing: border-box;
+        width: 100%;
+      }
+      button {
+        padding: 9px 13px;
+        border: 0;
+        border-radius: 5px;
+        background: #1769aa;
+        color: white;
+      }
+      .delete {
+        background: #b42318;
+        padding: 7px;
+      }
+      .hint,
+      #message {
+        color: #667085;
+      }
+      .dragging {
+        opacity: 0.45;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="toolbar">
+      <button onclick="addRow()">Add item</button
+      ><button onclick="save()">Save configuration</button
+      ><span id="message"></span>
+    </div>
+    <div class="list" id="list"></div>
+    <script>
+      const bootstrap = JSON.parse(atob("<?!= bootstrapBase64 ?>"));
+      let items = bootstrap.items;
+      const escapeHtml = (v) =>
+        String(v || "").replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[c],
+        );
+      function render() {
+        const list = document.getElementById("list");
+        list.innerHTML =
+          items
+            .map(
+              (x, i) =>
+                `<div class="row" draggable="true" data-i="${i}"><span class="handle">↕</span><input aria-label="Item" value="${escapeHtml(x.item)}" oninput="items[${i}].item=this.value"><input aria-label="Address" value="${escapeHtml(x.address)}" oninput="items[${i}].address=this.value"><input aria-label="Region" value="${escapeHtml(x.region)}" oninput="items[${i}].region=this.value"><label><input type="checkbox" ${x.active ? "checked" : ""} onchange="items[${i}].active=this.checked"> Active</label><button class="delete" onclick="items.splice(${i},1);render()">×</button></div>`,
+            )
+            .join("") ||
+          '<p class="hint">Add the first configuration item.</p>';
+        wireDrag();
+      }
+      function addRow() {
+        items.push({ item: "", address: "", region: "", active: true });
+        render();
+        document.querySelector(".row:last-child input").focus();
+      }
+      function wireDrag() {
+        document.querySelectorAll(".row").forEach((row) => {
+          row.ondragstart = (e) => {
+            e.dataTransfer.setData("text/plain", row.dataset.i);
+            row.classList.add("dragging");
+          };
+          row.ondragend = () => row.classList.remove("dragging");
+          row.ondragover = (e) => e.preventDefault();
+          row.ondrop = (e) => {
+            e.preventDefault();
+            const from = Number(e.dataTransfer.getData("text/plain")),
+              to = Number(row.dataset.i),
+              moved = items.splice(from, 1)[0];
+            items.splice(to, 0, moved);
+            render();
+          };
+        });
+      }
+      function save() {
+        const msg = document.getElementById("message");
+        msg.textContent = "Saving…";
+        google.script.run
+          .withSuccessHandler(
+            (r) => (msg.textContent = `Saved ${r.saved} item(s).`),
+          )
+          .withFailureHandler((e) => (msg.textContent = e.message))
+          .saveConfigurationItems(items);
+      }
+      render();
+    </script>
+  </body>
+</html>

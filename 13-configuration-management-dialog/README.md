@@ -1,26 +1,36 @@
 # Configuration management dialog
 
-## Problem
+This bound-Sheet dialog edits a small ordered configuration table without exposing users to raw rows, formulas or sort-order maintenance. Bootstrap data is Base64-encoded before entering the HTML template, and the server validates again before saving.
 
-Non-technical users need to maintain structured configuration, but direct Sheet editing can break formulas, sort order, validation, or aligned columns.
+## Flow
 
-## Architecture
+```text
+custom menu → read Configuration rows → encoded HTML dialog → add/edit/delete/drag rows
+                                                        ↓
+server validation → document lock → atomic table rewrite → reapply calculated formula
+```
 
-`Bound-Sheet menu → safely bootstrapped HTML dialog → client validation and drag ordering → locked atomic rewrite → calculated column`
+`Main.js` contains the open and save wrappers. The calculated `Display Label` column is rebuilt with an R1C1 formula after each successful save.
 
-## How it works
+## One-time setup
 
-- Loads all configuration rows into one accessible management dialog.
-- Encodes bootstrap data as Base64 before placing it in HTML, avoiding unsafe raw JSON/script injection.
-- Supports multi-record creation, editing, deletion, active flags, and drag-and-drop ordering.
-- Revalidates required and unique names on the server.
-- Rewrites the editable table inside a document lock, then reapplies the calculated column as an R1C1 formula.
-- Keeps the UI schema deliberately small so it can be adapted to locations, teams, products, routing rules, or similar settings.
+This project must be bound to a Google Sheet.
 
-## Configure
+1. Create a blank Sheet and bind an Apps Script project to it.
+2. Push these files to the bound project.
+3. Set `SETUP_FOLDER_ID` in `Setup.js`.
+4. Run `setupProject()` and approve Drive/Sheets access.
+5. Reload the spreadsheet and open **Configuration → Manage items**.
 
-Create a bound Apps Script project, add both files, run `setupConfigurationManager()`, and reload the spreadsheet. Choose **Configuration → Manage items**.
+There are no Script Properties. The editable headers and sheet name live in `Helpers/Consts.js`.
 
-## Portfolio note
+## Testing the workflow
 
-This retains the strongest UX and data-integrity ideas from a more specialised configuration tool while replacing all organisation-specific fields, options, and locations.
+1. Open the dialog and add three fictional items with regions and addresses.
+2. Drag them into a new order and save.
+3. Confirm `Sort Order` is sequential and `Display Label` contains formulas rather than pasted text.
+4. Reopen the dialog, edit one item, deactivate another and delete the third.
+5. Try duplicate names and a blank name; both saves should be rejected without partially changing the Sheet.
+6. Open the Sheet in two sessions and confirm the document lock prevents overlapping structural writes.
+
+The field schema is deliberately small. Changing it requires coordinated updates to `Helpers/Consts.js`, `Configuration.js` and `Index.html`.

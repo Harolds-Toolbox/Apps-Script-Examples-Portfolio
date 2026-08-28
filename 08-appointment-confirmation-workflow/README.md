@@ -1,25 +1,45 @@
 # Appointment confirmation workflow
 
-## Problem
+This workflow finds upcoming appointments, sends a response link and records either confirmation or cancellation. Links contain only an opaque server-side token and can be consumed once before expiry.
 
-Teams lose time chasing appointment confirmations, while ordinary query-string links can expose personal data or allow repeat actions.
+## Flow
 
-## Architecture
+```text
+hourly trigger → pending appointments → issue expiring token → reminder email → response web app
+                                                                              ↓
+Appointments sheet ← status/response time ← consume token under lock ← confirm/cancel
+        └→ coordinator notification + audit log + overdue escalation
+```
 
-`Appointments sheet → scheduled reminder → one-time token → web response → coordinator notification + audit log`
+`runAppointmentReminderCycle()` in `Main.js` runs both scheduled checks in order. The web app path is handled separately by `doGet()` and `submitAppointmentResponse()`.
 
-## How it works
+## One-time setup
 
-- Finds pending appointments inside a configurable reminder window.
-- Emails an opaque, one-time, expiring response link—no identity data appears in the URL.
-- Uses a script lock so concurrent clicks cannot consume the same token twice.
-- Records confirmation or cancellation and alerts the responsible coordinator.
-- Escalates appointments that reach their start time without a response.
+1. Set `SETUP_FOLDER_ID` at the top of `Setup.js`.
+2. Push and run `setupProject()` to create the appointment, token and audit tabs.
+3. Deploy as a web app and copy the `/exec` URL into `APPOINTMENT_WEB_APP_URL`.
+4. Add a fictional appointment using an email account you control.
+5. Run `sendAppointmentReminders()` manually.
+6. When the response flow works, run `installProjectTriggers()`.
 
-## Configure
+## Script Properties
 
-Set Script Properties `APPOINTMENT_SPREADSHEET_ID`, `APPOINTMENT_WEB_APP_URL`, and optionally `REMINDER_LEAD_HOURS` and `RESPONSE_TOKEN_LIFETIME_HOURS`. Deploy as a web app, then run `setupAppointmentWorkflow()` once.
+| Property | Set by setup | Notes |
+| --- | --- | --- |
+| `APPOINTMENT_SPREADSHEET_ID` | Yes | Workflow storage. |
+| `REMINDER_LEAD_HOURS` | Yes | Defaults to `24`. |
+| `RESPONSE_TOKEN_LIFETIME_HOURS` | Yes | Defaults to `48`. |
+| `APPOINTMENT_WEB_APP_URL` | No | Deployment `/exec` URL. |
 
-## Portfolio note
+The project asks for Drive, Sheets, email, web-app and trigger permissions. Use a deployment access setting appropriate for the people receiving response links.
 
-This is a neutral rebuild of a production appointment-reminder pattern. Names, branding, data, layouts, and URLs are fictional; the security model was strengthened with server-side, expiring, single-use tokens.
+## Testing the workflow
+
+1. Add a row with status `Pending`, a time within the reminder window and your own participant/coordinator addresses.
+2. Run `sendAppointmentReminders()` and open the received link.
+3. Confirm the appointment and inspect the status, response time and audit row.
+4. Open the same link again; it should report that the token is no longer valid.
+5. Repeat with a second appointment and choose cancellation.
+6. Add an overdue pending appointment and run `escalateMissingResponses()` to test coordinator follow-up.
+
+Keep the `_Response Tokens` tab protected from ordinary editors. It is application state rather than an operator-facing table.

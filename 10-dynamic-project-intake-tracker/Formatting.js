@@ -1,3 +1,59 @@
-function formatAllProjects(){const sheet=trackerSpreadsheet_().getSheetByName(TRACKER.active),values=sheet.getRange(1,1,Math.max(sheet.getLastRow(),1),1).getDisplayValues().flat();values.forEach((v,i)=>{if(v.indexOf(TRACKER.marker)===0){const next=values.findIndex((n,j)=>j>i&&n.indexOf(TRACKER.marker)===0);formatProjectBlock_(sheet,i+1,(next<0?sheet.getLastRow():next)-(i+1)+1);}});}
+function formatAllProjects() {
+  const sheet = trackerSpreadsheet_().getSheetByName(TRACKER.active),
+    values = sheet
+      .getRange(1, 1, Math.max(sheet.getLastRow(), 1), 1)
+      .getDisplayValues()
+      .flat();
+  values.forEach((v, i) => {
+    if (v.indexOf(TRACKER.marker) === 0) {
+      const next = values.findIndex(
+        (n, j) => j > i && n.indexOf(TRACKER.marker) === 0,
+      );
+      formatProjectBlock_(
+        sheet,
+        i + 1,
+        (next < 0 ? sheet.getLastRow() : next) - (i + 1) + 1,
+      );
+    }
+  });
+}
 
-function formatProjectBlock_(sheet,start,length){const options=trackerOptions_(),header=start+4,dataStart=header+1,dataRows=Math.max(1,length-5);sheet.getRange(start,1,1,TRACKER.columns.length).merge().setBackground('#16324f').setFontColor('#fff').setFontWeight('bold');sheet.getRange(start+1,1,3,1).setFontWeight('bold').setBackground('#eaf0f6');sheet.getRange(header,1,1,TRACKER.columns.length).setValues([TRACKER.columns]).setBackground('#28666e').setFontColor('#fff').setFontWeight('bold');sheet.getRange(dataStart,3,dataRows,1).setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList(options.statuses,true).build());sheet.getRange(dataStart,4,dataRows,1).setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList(options.priorities,true).build());sheet.getRange(dataStart,5,dataRows,1).setNumberFormat('dd mmm yyyy');sheet.setColumnWidths(1,TRACKER.columns.length,145);sheet.setColumnWidth(6,260);}
+function formatProjectBlock_(sheet, start, length) {
+  const options = trackerOptions_(),
+    header = start + 4,
+    dataStart = header + 1,
+    dataRows = Math.max(1, length - 5);
+  sheet
+    .getRange(start, 1, 1, TRACKER.columns.length)
+    .merge()
+    .setBackground("#16324f")
+    .setFontColor("#fff")
+    .setFontWeight("bold");
+  sheet
+    .getRange(start + 1, 1, 3, 1)
+    .setFontWeight("bold")
+    .setBackground("#eaf0f6");
+  sheet
+    .getRange(header, 1, 1, TRACKER.columns.length)
+    .setValues([TRACKER.columns])
+    .setBackground("#28666e")
+    .setFontColor("#fff")
+    .setFontWeight("bold");
+  sheet
+    .getRange(dataStart, 3, dataRows, 1)
+    .setDataValidation(
+      SpreadsheetApp.newDataValidation()
+        .requireValueInList(options.statuses, true)
+        .build(),
+    );
+  sheet
+    .getRange(dataStart, 4, dataRows, 1)
+    .setDataValidation(
+      SpreadsheetApp.newDataValidation()
+        .requireValueInList(options.priorities, true)
+        .build(),
+    );
+  sheet.getRange(dataStart, 5, dataRows, 1).setNumberFormat("dd mmm yyyy");
+  sheet.setColumnWidths(1, TRACKER.columns.length, 145);
+  sheet.setColumnWidth(6, 260);
+}

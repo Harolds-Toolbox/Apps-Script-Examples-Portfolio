@@ -1,4 +1,54 @@
-function fetchPagedRecords_(source){let url=source.url,records=[];for(let page=0;url&&page<100;page++){const response=fetchReconciliationUrl_(url,source.token),payload=JSON.parse(response.getContentText());records=records.concat(Array.isArray(payload)?payload:(payload.items||payload.results||[]));url=payload.next||payload.nextPageUrl||'';}return records;}
-function fetchReconciliationUrl_(url,token){for(let attempt=0;attempt<4;attempt++){const response=UrlFetchApp.fetch(url,{headers:{Authorization:'Bearer '+token,Accept:'application/json'},muteHttpExceptions:true});const code=response.getResponseCode();if(code>=200&&code<300)return response;if(code===429||code>=500){Utilities.sleep(500*Math.pow(2,attempt));continue;}throw new Error('API request failed ('+code+'): '+response.getContentText().slice(0,400));}throw new Error('API unavailable after retries.');}
-function normaliseSourceA_(row){return{id:String(row.id||row.eventId||''),externalId:String(row.externalId||row.reference||''),name:String(row.name||row.participantName||''),email:String(row.email||''),phone:String(row.phone||''),occurredAt:new Date(row.completedAt||row.occurredAt||row.date)};}
-function normaliseSourceB_(row){return{id:String(row.id||''),sourceId:String(row.sourceId||row.externalId||''),name:String(row.name||row.respondentName||''),email:String(row.email||''),phone:String(row.phone||''),completedAt:new Date(row.completedAt||row.submittedAt||row.date)};}
+function fetchPagedRecords_(source) {
+  let url = source.url,
+    records = [];
+  for (let page = 0; url && page < 100; page++) {
+    const response = fetchReconciliationUrl_(url, source.token),
+      payload = JSON.parse(response.getContentText());
+    records = records.concat(
+      Array.isArray(payload) ? payload : payload.items || payload.results || [],
+    );
+    url = payload.next || payload.nextPageUrl || "";
+  }
+  return records;
+}
+function fetchReconciliationUrl_(url, token) {
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const response = UrlFetchApp.fetch(url, {
+      headers: { Authorization: "Bearer " + token, Accept: "application/json" },
+      muteHttpExceptions: true,
+    });
+    const code = response.getResponseCode();
+    if (code >= 200 && code < 300) return response;
+    if (code === 429 || code >= 500) {
+      Utilities.sleep(500 * Math.pow(2, attempt));
+      continue;
+    }
+    throw new Error(
+      "API request failed (" +
+        code +
+        "): " +
+        response.getContentText().slice(0, 400),
+    );
+  }
+  throw new Error("API unavailable after retries.");
+}
+function normaliseSourceA_(row) {
+  return {
+    id: String(row.id || row.eventId || ""),
+    externalId: String(row.externalId || row.reference || ""),
+    name: String(row.name || row.participantName || ""),
+    email: String(row.email || ""),
+    phone: String(row.phone || ""),
+    occurredAt: new Date(row.completedAt || row.occurredAt || row.date),
+  };
+}
+function normaliseSourceB_(row) {
+  return {
+    id: String(row.id || ""),
+    sourceId: String(row.sourceId || row.externalId || ""),
+    name: String(row.name || row.respondentName || ""),
+    email: String(row.email || ""),
+    phone: String(row.phone || ""),
+    completedAt: new Date(row.completedAt || row.submittedAt || row.date),
+  };
+}

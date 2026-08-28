@@ -1,26 +1,44 @@
 # Record history and entity resolution
 
-## Problem
+This job turns editable Sheet records into timestamped Drive snapshots and append-only history rows, then raises possible duplicate entities for manual review. It never merges records automatically.
 
-Operational records are edited in place across several tabs, making it hard to reconstruct history or spot duplicates created under slightly different details.
+## Flow
 
-## Architecture
+```text
+configured source tabs → header-driven records ─┬→ timestamped JSON snapshot → retention
+                                                ├→ fingerprint → append changed history
+                                                └→ email/phone/name scoring → unacknowledged match queue
+```
 
-`Header-driven Sheet sources → canonical records → Drive snapshot + append-only history → similarity matching → review queue`
+`snapshotAndResolveEntities()` in `Main.js` shows the full run. Exact normalised email and phone matches carry the strongest score; fuzzy names are deliberately held below automatic-decision territory.
 
-## How it works
+## One-time setup
 
-- Reads any configured tab by header name rather than relying on colours, positions, or employer-specific layouts.
-- Writes timestamped JSON snapshots to Drive and keeps a configurable number of versions.
-- Appends only changed record fingerprints to the history table.
-- Scores possible matches using exact normalised email/phone and fuzzy name comparison.
-- Separates suggestions from decisions; acknowledged pairs are not repeatedly raised.
-- Uses a script lock so scheduled runs cannot overlap.
+1. Set `SETUP_FOLDER_ID` in `Setup.js`.
+2. Push and run `setupProject()`.
+3. Approve Drive and Sheets access. Setup creates the workbook, a `Customers` source tab and a snapshots folder.
+4. Edit `ENTITY_SOURCES_JSON` if additional source tabs are required.
+5. Run `snapshotAndResolveEntities()` manually before installing the daily trigger with `installProjectTriggers()`.
 
-## Configure
+## Script Properties
 
-Set `ENTITY_SPREADSHEET_ID`, `ENTITY_SNAPSHOT_FOLDER_ID`, and `ENTITY_SOURCES_JSON`, for example `[{"sheet":"Customers","id":"Customer ID"},{"sheet":"Enquiries","id":"Enquiry ID"}]`. Optional properties: `SNAPSHOT_RETENTION_COUNT` and `ENTITY_ALERT_RECIPIENT`. Run `installEntityResolutionTrigger()` once.
+| Property | Set by setup | Notes |
+| --- | --- | --- |
+| `ENTITY_SPREADSHEET_ID` | Yes | Source, history and match-review workbook. |
+| `ENTITY_SNAPSHOT_FOLDER_ID` | Yes | JSON snapshot storage. |
+| `ENTITY_SOURCES_JSON` | Yes | Defaults to the generated `Customers` tab. |
+| `SNAPSHOT_RETENTION_COUNT` | Yes | Defaults to `30`. |
+| `ENTITY_ALERT_RECIPIENT` | No | Optional match notification address. |
 
-## Portfolio note
+Email permission is only needed when an alert recipient is configured. Trigger installation requires trigger-management permission.
 
-This extracts the reusable history and entity-resolution ideas from a larger CRM without copying its names, data model, styling, or personal data. Matching is deliberately review-first: it never merges records automatically.
+## Testing the workflow
+
+1. Add two fictional customers with different IDs and the same normalised email or phone.
+2. Add a third row with a similar but not identical name.
+3. Run `snapshotAndResolveEntities()` and inspect the JSON snapshot, `Record History` and `Possible Matches`.
+4. Copy one match key to `_Match Acknowledgements`, add a timestamp/note and run again; that pair should no longer be raised.
+5. Edit one customer field and rerun; one new history fingerprint should be appended.
+6. Confirm no source row was changed or merged.
+
+Source definitions use header names rather than fixed column numbers, colours or formatting.

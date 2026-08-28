@@ -1,1 +1,66 @@
-<!doctype html><html><head><base target="_top"><style>body{font:14px system-ui;padding:18px;color:#17202a}label{display:block;margin:12px 0 4px}input{width:100%;box-sizing:border-box;padding:9px}button{margin-top:18px;padding:10px 16px;background:#1769aa;color:white;border:0;border-radius:5px}#error{color:#b42318;margin-top:10px}</style></head><body><form onsubmit="save(event)"><label>Project name</label><input id="name" required maxlength="120"><label>Sponsor or owner</label><input id="sponsor" maxlength="120"><label>Target date</label><input id="date" type="date"><label>Starting work-item rows</label><input id="rows" type="number" min="1" max="50" value="5"><button>Create project</button><div id="error"></div></form><script>function save(e){e.preventDefault();const b=document.querySelector('button');b.disabled=true;google.script.run.withSuccessHandler(()=>google.script.host.close()).withFailureHandler(err=>{document.getElementById('error').textContent=err.message;b.disabled=false}).createProject({name:document.getElementById('name').value,sponsor:document.getElementById('sponsor').value,targetDate:document.getElementById('date').value,initialRows:document.getElementById('rows').value})}</script></body></html>
+<!doctype html>
+<html>
+  <head>
+    <base target="_top" />
+    <style>
+      body {
+        font: 14px system-ui;
+        padding: 18px;
+        color: #17202a;
+      }
+      label {
+        display: block;
+        margin: 12px 0 4px;
+      }
+      input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 9px;
+      }
+      button {
+        margin-top: 18px;
+        padding: 10px 16px;
+        background: #1769aa;
+        color: white;
+        border: 0;
+        border-radius: 5px;
+      }
+      #error {
+        color: #b42318;
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <form onsubmit="save(event)">
+      <label>Project name</label
+      ><input id="name" required maxlength="120" /><label
+        >Sponsor or owner</label
+      ><input id="sponsor" maxlength="120" /><label>Target date</label
+      ><input id="date" type="date" /><label>Starting work-item rows</label
+      ><input id="rows" type="number" min="1" max="50" value="5" /><button>
+        Create project
+      </button>
+      <div id="error"></div>
+    </form>
+    <script>
+      function save(e) {
+        e.preventDefault();
+        const b = document.querySelector("button");
+        b.disabled = true;
+        google.script.run
+          .withSuccessHandler(() => google.script.host.close())
+          .withFailureHandler((err) => {
+            document.getElementById("error").textContent = err.message;
+            b.disabled = false;
+          })
+          .createProject({
+            name: document.getElementById("name").value,
+            sponsor: document.getElementById("sponsor").value,
+            targetDate: document.getElementById("date").value,
+            initialRows: document.getElementById("rows").value,
+          });
+      }
+    </script>
+  </body>
+</html>

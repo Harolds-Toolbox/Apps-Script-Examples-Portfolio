@@ -1,45 +1,52 @@
 # Reliable webhook inbox
 
-A generic webhook receiver designed for Apps Script's short request lifecycle and quota constraints. It validates an HMAC signature, acknowledges quickly, drains a durable property queue into a Sheet inbox, retries failures and reconciles recent changes from the source API.
+Apps Script web requests need to finish quickly. This receiver validates the request, queues the raw event in Script Properties and acknowledges it; scheduled jobs then move events into a Sheet, process them with retries and optionally reconcile a source change feed.
 
-## Delivery contract
-
-Send a JSON body with at least:
-
-```json
-{"id":"evt_1042","type":"record.updated","occurredAt":"2026-01-15T09:30:00Z","data":{"recordId":"rec_88"}}
-```
-
-The request URL must include:
+## Flow
 
 ```text
-?timestamp=UNIX_SECONDS&signature=HEX_HMAC_SHA256
+signed POST → timestamp/HMAC check → property queue → immediate JSON acknowledgement
+                                           ↓
+minute trigger → Sheet inbox → route handler → DONE / RETRY / DEAD
+hourly change-feed reconciliation ─────────┘
 ```
 
-The signature is HMAC-SHA256 over `timestamp + "." + rawRequestBody`, using `WEBHOOK_SIGNING_SECRET`. Requests more than five minutes from the server clock are rejected.
+`runWebhookProcessingCycle()` in `Main.js` is the manual equivalent of the scheduled processing stages. The route handlers in `Processor.js` are intentionally small places to attach destination-specific work.
 
-## Sheet
+## One-time setup
 
-Create `Webhook Inbox` with:
-
-```text
-Received At | Event ID | Event Type | Payload JSON | Status | Attempts | Next Retry At | Last Error | Processed At | Source
-```
+1. Set `SETUP_FOLDER_ID` in `Setup.js`.
+2. Push and run `setupProject()` to create the `Webhook Inbox` spreadsheet.
+3. Add `WEBHOOK_SIGNING_SECRET` with at least 32 random characters.
+4. Deploy as a web app and give the resulting `/exec` URL to the sending system.
+5. Optionally set the reconciliation endpoint properties.
+6. Run `installProjectTriggers()` after a signed test request has completed successfully.
 
 ## Script Properties
 
-- `WEBHOOK_SIGNING_SECRET` — at least 32 random characters
-- `WEBHOOK_SPREADSHEET_ID`
-- `RECONCILIATION_API_URL` — optional change-feed endpoint
-- `RECONCILIATION_API_TOKEN` — optional bearer token
+| Property | Set by setup | Notes |
+| --- | --- | --- |
+| `WEBHOOK_SPREADSHEET_ID` | Yes | Durable processing inbox. |
+| `WEBHOOK_SIGNING_SECRET` | No | HMAC-SHA256 secret shared with the sender. |
+| `RECONCILIATION_API_URL` | No | Optional change-feed URL. |
+| `RECONCILIATION_API_TOKEN` | No | Bearer token required when the reconciliation URL is set. |
+| `RECONCILIATION_CHECKPOINT` | Runtime | Updated after successful reconciliation. |
 
-Run `installWebhookAutomation()` once. Replace the sample route handlers with destination-specific work.
+Permissions cover Sheets, Script Properties, external requests and trigger management. The optional reconciliation path performs outbound HTTP requests.
 
-## Reliability layers
+## Testing the workflow
 
-1. Timestamped HMAC validation.
-2. Fast Script Properties enqueue and immediate acknowledgement.
-3. Lock-protected batch flush to a durable Sheet.
-4. Event-ID deduplication.
-5. Exponential retry scheduling and dead-letter state.
-6. Source API reconciliation from a saved checkpoint.
+Use a fictional body such as:
+
+```json
+{"id":"evt_test_1042","type":"record.updated","occurredAt":"2026-01-15T09:30:00Z","data":{"recordId":"rec_test_88"}}
+```
+
+1. Generate a current Unix timestamp.
+2. Calculate the hex HMAC-SHA256 of `timestamp + "." + rawBody` with `WEBHOOK_SIGNING_SECRET`.
+3. POST the exact raw body to `WEB_APP_URL?timestamp=...&signature=...`.
+4. Run `runWebhookProcessingCycle()` and confirm the event reaches `DONE`.
+5. Repeat the same event ID and confirm it is not processed twice.
+6. Send an invalid signature and an old timestamp; both should be rejected before queueing.
+
+Do not install the recurring triggers until the route handlers are safe to run repeatedly.

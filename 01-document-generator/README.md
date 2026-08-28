@@ -1,84 +1,51 @@
 # Dual-template PDF document generator
 
-A complete Apps Script web app that collects structured data and downloads a finished PDF using either a Google Doc or a Google Sheet as the layout template. The selected template is copied, populated, exported and moved to Trash; generated source files are not retained.
+This web app accepts a small set of project values and turns them into a downloadable PDF. The user can switch between a Google Doc layout and a Google Sheet layout without changing the submitted data.
 
-## What it demonstrates
-
-- A responsive, accessible HTML Service web app with a Doc/Sheet template toggle.
-- Server-side validation independent of browser validation.
-- Google Docs token replacement across the body, header and footer.
-- Google Sheets template copying that preserves cell formatting, merged ranges, dimensions and print layout.
-- Direct browser downloads using a Base64 response, `Blob` and temporary object URL.
-- Guaranteed temporary-file cleanup with `try`/`finally`.
-- Fail-closed checks for missing properties, wrong Drive file types, missing tabs and templates with no supported tokens.
-- Synthetic self-tests that do not read Drive or generate files.
-
-## Architecture
+## Flow
 
 ```text
-                            ┌→ copy Google Doc → replace body/header/footer tokens ┐
-Browser form → validation ─┤                                                      ├→ PDF Blob → Base64 → browser download
-                            └→ copy Sheet tab → replace cell tokens → flush layout ┘
-                                                ↓
-                                      trash temporary source
+web form → server validation → choose template type
+                              ├→ copy Google Doc → replace body/header/footer tokens ┐
+                              └→ copy Google Sheet → replace cell tokens → flush      ├→ PDF → browser download
+                                                                                      └→ trash temporary source
 ```
+
+`Main.js` exposes the two useful top-level calls. `runPdfGeneration()` follows the generation path; `runDocumentGeneratorChecks()` runs the synthetic validation checks. Both renderers work against temporary Drive copies, so the source templates are never edited.
+
+## One-time setup
+
+1. Open `Setup.js` and replace `PASTE_GOOGLE_DRIVE_FOLDER_ID_HERE` with the ID of a Drive folder owned by the deploying account.
+2. Push the project to Apps Script.
+3. Run `setupProject()` from the Apps Script editor.
+4. Approve access to Google Drive, Docs and Sheets when prompted.
+5. Check Script Properties. Setup writes `DOCUMENT_TEMPLATE_ID`, `SPREADSHEET_TEMPLATE_ID` and `SPREADSHEET_TEMPLATE_SHEET_NAME` automatically.
+6. Run `runDocumentGeneratorChecks()` and confirm `{ ok: true }`.
+7. Deploy as a web app for the intended signed-in users.
+
+Setup creates both fictional templates in the configured folder. The Markdown files under `sample-template` describe the same layouts if you want to rebuild them manually.
 
 ## Script Properties
 
-Both template IDs are required, even though the user selects only one for each download:
-
-| Property | Required | Purpose |
+| Property | Set by setup | Notes |
 | --- | --- | --- |
-| `DOCUMENT_TEMPLATE_ID` | Yes | File ID of the Google Doc template. |
-| `SPREADSHEET_TEMPLATE_ID` | Yes | File ID of the Google Spreadsheet template. |
-| `SPREADSHEET_TEMPLATE_SHEET_NAME` | No | Template tab to copy. The first tab is used when omitted. |
+| `DOCUMENT_TEMPLATE_ID` | Yes | Google Doc used for the narrative layout. |
+| `SPREADSHEET_TEMPLATE_ID` | Yes | Google Spreadsheet used for the form layout. |
+| `SPREADSHEET_TEMPLATE_SHEET_NAME` | Yes | Defaults to `Project Summary`. |
 
-No IDs are included in this repository. The deploying account must be able to read both templates and create temporary Drive files.
+If the generated templates are replaced later, update the corresponding IDs manually.
+
+## Testing the workflow
+
+1. Open the deployed web app and select **Load test data**.
+2. Leave **Google Doc** selected and choose **Download PDF**.
+3. Confirm the PDF contains the reference, multiline address, formatted total and notes.
+4. Switch to **Google Sheet** and download again.
+5. Confirm the content matches but the layout follows the Sheet template.
+6. Check Drive Trash for the temporary source files. No completed source file should remain in the setup folder.
+
+The web app returns PDFs through `google.script.run`, so this version is intended for compact files. Larger output is better saved to a controlled Drive location with a separate access flow.
 
 ## Supported tokens
 
-The same placeholders work in both template types:
-
-```text
-{{REFERENCE}}
-{{CUSTOMER_NAME}}
-{{CUSTOMER_ADDRESS}}
-{{PROJECT_TITLE}}
-{{START_DATE}}
-{{CURRENCY}}
-{{CURRENCY_SYMBOL}}
-{{TOTAL}}
-{{NOTES}}
-{{CREATED_DATE}}
-```
-
-In a Google Doc, tokens may appear in the body, header or footer. In a Google Sheet, tokens may occupy a cell or appear inside other cell text. At least one supported token must exist in the selected template.
-
-## Fictional templates
-
-The `sample-template` directory contains complete build guides for:
-
-- `Document Template.md` — an imagined project-confirmation Google Doc.
-- `Spreadsheet Template.md` — an imagined one-page project-summary Google Sheet, including cell ranges and print-layout suggestions.
-- `Test Data.md` — the fictional values used by the web app's **Load test data** button.
-
-These Markdown files document the templates; they are not runtime dependencies. Recreate each layout in Google Drive and set its file ID in Script Properties.
-
-## Deploy and test
-
-1. Create a V8 standalone Apps Script project and add the source files.
-2. Recreate the two fictional templates, or adapt your own templates to the supported tokens.
-3. Add both required IDs under **Project Settings → Script Properties**.
-4. Optionally set `SPREADSHEET_TEMPLATE_SHEET_NAME`.
-5. Run `runDocumentGeneratorSelfTests()` and confirm it returns `{ ok: true }`.
-6. Deploy as a web app for the intended signed-in users, using the narrowest suitable access setting.
-7. Open the deployment, choose a template, select **Load test data**, then select **Download PDF**.
-8. Repeat with the other template type and compare the two layouts.
-
-## Production considerations
-
-This pattern is suited to compact PDFs returned through `google.script.run`. For large or highly graphical files, save the PDF to a controlled Drive location and return a short-lived access flow instead of transferring a large Base64 payload. Drive Trash remains subject to the owner's retention policy, so environments with stricter deletion requirements should add an approved cleanup process.
-
-## Portfolio note
-
-The spreadsheet rendering path is a neutral reconstruction of a production-proven template-copy pattern: copy one formatted source tab into a temporary spreadsheet, remove default tabs, replace placeholders, flush, export and clean up. This example contains no production template, identifiers, finance fields, organisation names, customer data, branding or watermark assets.
+`{{REFERENCE}}`, `{{CUSTOMER_NAME}}`, `{{CUSTOMER_ADDRESS}}`, `{{PROJECT_TITLE}}`, `{{START_DATE}}`, `{{CURRENCY}}`, `{{CURRENCY_SYMBOL}}`, `{{TOTAL}}`, `{{NOTES}}` and `{{CREATED_DATE}}`.

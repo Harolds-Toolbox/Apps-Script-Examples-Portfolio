@@ -1,5 +1,48 @@
-function webhookApi_(method,path,body){const c=webhookManagerConfig_();for(let attempt=0;attempt<4;attempt++){const response=UrlFetchApp.fetch(c.baseUrl+path,{method,headers:{Authorization:'Bearer '+c.token,Accept:'application/json'},contentType:'application/json',payload:body?JSON.stringify(body):undefined,muteHttpExceptions:true});const code=response.getResponseCode();if(code>=200&&code<300)return response.getContentText()?JSON.parse(response.getContentText()):{};if(code===429||code>=500){Utilities.sleep(Math.min(8000,500*Math.pow(2,attempt)));continue;}throw new Error('Provider request failed ('+code+'): '+response.getContentText().slice(0,500));}throw new Error('Provider request failed after retries.');}
-function listProviderWebhooks_(){const result=webhookApi_('get','/webhooks');return Array.isArray(result)?result:(result.items||[]);}
-function createProviderWebhook_(c){return webhookApi_('post','/webhooks',{url:c.callbackUrl,events:c.events,scope:c.scope});}
-function updateProviderWebhook_(id,patch){return webhookApi_('patch','/webhooks/'+encodeURIComponent(id),patch);}
-function deleteProviderWebhook_(id){return webhookApi_('delete','/webhooks/'+encodeURIComponent(id));}
+function webhookApi_(method, path, body) {
+  const c = webhookManagerConfig_();
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const response = UrlFetchApp.fetch(c.baseUrl + path, {
+      method,
+      headers: {
+        Authorization: "Bearer " + c.token,
+        Accept: "application/json",
+      },
+      contentType: "application/json",
+      payload: body ? JSON.stringify(body) : undefined,
+      muteHttpExceptions: true,
+    });
+    const code = response.getResponseCode();
+    if (code >= 200 && code < 300)
+      return response.getContentText()
+        ? JSON.parse(response.getContentText())
+        : {};
+    if (code === 429 || code >= 500) {
+      Utilities.sleep(Math.min(8000, 500 * Math.pow(2, attempt)));
+      continue;
+    }
+    throw new Error(
+      "Provider request failed (" +
+        code +
+        "): " +
+        response.getContentText().slice(0, 500),
+    );
+  }
+  throw new Error("Provider request failed after retries.");
+}
+function listProviderWebhooks_() {
+  const result = webhookApi_("get", "/webhooks");
+  return Array.isArray(result) ? result : result.items || [];
+}
+function createProviderWebhook_(c) {
+  return webhookApi_("post", "/webhooks", {
+    url: c.callbackUrl,
+    events: c.events,
+    scope: c.scope,
+  });
+}
+function updateProviderWebhook_(id, patch) {
+  return webhookApi_("patch", "/webhooks/" + encodeURIComponent(id), patch);
+}
+function deleteProviderWebhook_(id) {
+  return webhookApi_("delete", "/webhooks/" + encodeURIComponent(id));
+}

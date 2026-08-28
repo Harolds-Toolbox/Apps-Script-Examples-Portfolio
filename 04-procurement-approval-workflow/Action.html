@@ -1,8 +1,86 @@
 <!doctype html>
-<html lang="en"><head><base target="_top"><style>
-  body{margin:0;min-height:100vh;display:grid;place-items:center;background:#f5f7fa;color:#17202a;font:15px/1.5 Arial,sans-serif}.card{width:min(440px,calc(100% - 32px));padding:28px;border:1px solid #d0d5dd;border-radius:16px;background:#fff;box-shadow:0 18px 50px rgba(16,24,40,.1);text-align:center}button{width:100%;padding:12px;border:0;border-radius:8px;background:#175cd3;color:#fff;font-weight:800;cursor:pointer}button:disabled{opacity:.55}#status{margin-top:14px;color:#667085}.error{color:#b42318!important}
-</style></head><body><main class="card"><h1>Confirm action</h1><p id="summary"></p><button id="confirm">Confirm</button><div id="status" role="status"></div></main><script>
-  const payload=JSON.parse(decodeURIComponent(escape(atob('<?= payloadBase64 ?>'.replace(/-/g,'+').replace(/_/g,'/')))));const button=document.getElementById('confirm'),status=document.getElementById('status');
-  document.getElementById('summary').textContent=payload.action+' request '+payload.reference+'?';
-  button.addEventListener('click',function(){button.disabled=true;status.textContent='Recording…';google.script.run.withSuccessHandler(function(result){button.hidden=true;status.textContent='Recorded: '+result.reference+' is '+result.status+'.'}).withFailureHandler(function(error){button.disabled=false;status.className='error';status.textContent=error&&error.message?error.message:'Action failed.'}).executeSignedProcurementAction(payload)});
-</script></body></html>
+<html lang="en">
+  <head>
+    <base target="_top" />
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: #f5f7fa;
+        color: #17202a;
+        font:
+          15px/1.5 Arial,
+          sans-serif;
+      }
+      .card {
+        width: min(440px, calc(100% - 32px));
+        padding: 28px;
+        border: 1px solid #d0d5dd;
+        border-radius: 16px;
+        background: #fff;
+        box-shadow: 0 18px 50px rgba(16, 24, 40, 0.1);
+        text-align: center;
+      }
+      button {
+        width: 100%;
+        padding: 12px;
+        border: 0;
+        border-radius: 8px;
+        background: #175cd3;
+        color: #fff;
+        font-weight: 800;
+        cursor: pointer;
+      }
+      button:disabled {
+        opacity: 0.55;
+      }
+      #status {
+        margin-top: 14px;
+        color: #667085;
+      }
+      .error {
+        color: #b42318 !important;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <h1>Confirm action</h1>
+      <p id="summary"></p>
+      <button id="confirm">Confirm</button>
+      <div id="status" role="status"></div>
+    </main>
+    <script>
+      const payload = JSON.parse(
+        decodeURIComponent(
+          escape(
+            atob("<?= payloadBase64 ?>".replace(/-/g, "+").replace(/_/g, "/")),
+          ),
+        ),
+      );
+      const button = document.getElementById("confirm"),
+        status = document.getElementById("status");
+      document.getElementById("summary").textContent =
+        payload.action + " request " + payload.reference + "?";
+      button.addEventListener("click", function () {
+        button.disabled = true;
+        status.textContent = "Recording…";
+        google.script.run
+          .withSuccessHandler(function (result) {
+            button.hidden = true;
+            status.textContent =
+              "Recorded: " + result.reference + " is " + result.status + ".";
+          })
+          .withFailureHandler(function (error) {
+            button.disabled = false;
+            status.className = "error";
+            status.textContent =
+              error && error.message ? error.message : "Action failed.";
+          })
+          .executeSignedProcurementAction(payload);
+      });
+    </script>
+  </body>
+</html>

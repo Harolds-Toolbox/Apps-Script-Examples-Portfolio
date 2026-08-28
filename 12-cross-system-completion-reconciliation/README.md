@@ -1,26 +1,44 @@
 # Cross-system completion reconciliation
 
-## Problem
+This scheduled comparison finds events in one system that have no corresponding completion in another after a configurable grace period. Matching checks source references first, followed by normalised email, phone and a strict name threshold.
 
-A process can be completed in one system while its required follow-up remains missing in another. Manual comparisons are slow, inconsistent, and easy to forget.
+## Flow
 
-## Architecture
+```text
+System A pages → normalise eligible events ┐
+                                           ├→ layered match → exceptions → Sheet report
+System B pages → normalise completions ─────┘                         └→ consolidated email
+```
 
-`System A paginated events + System B paginated completions → canonical models → deterministic/fuzzy matching → exception report + digest`
+`reconcileCompletions()` in `Main.js` holds the complete flow under a script lock. It reads both systems and writes a report; it does not mutate either source.
 
-## How it works
+## One-time setup
 
-- Retrieves paginated data with authentication, transient-error retries, and a page safety limit.
-- Waits for a configurable grace period before declaring an item incomplete.
-- Matches strongest identifiers first: source reference, email, phone, then a strict name similarity threshold.
-- Produces one consolidated exception email rather than one alert per record.
-- Optionally replaces a Sheet-based exception report on each run.
-- Serialises scheduled executions with a script lock.
+1. Set `SETUP_FOLDER_ID` in `Setup.js`.
+2. Push and run `setupProject()` to create the exception spreadsheet and default 24-hour grace period.
+3. Add both source URLs/tokens and an alert recipient.
+4. Adapt `normaliseSourceA_()` and `normaliseSourceB_()` to the test payload shapes.
+5. Run `reconcileCompletions()` manually before calling `installProjectTriggers()`.
 
-## Configure
+## Script Properties
 
-Set `SOURCE_A_URL`, `SOURCE_A_TOKEN`, `SOURCE_B_URL`, `SOURCE_B_TOKEN`, and `RECONCILIATION_ALERT_RECIPIENT`. Optional: `RECONCILIATION_AGE_HOURS` and `RECONCILIATION_SPREADSHEET_ID`. Adapt only the two normaliser functions to map real API payloads, then run `installCompletionReconciliation()`.
+| Property | Set by setup | Notes |
+| --- | --- | --- |
+| `RECONCILIATION_SPREADSHEET_ID` | Yes | `Completion Exceptions` report. |
+| `RECONCILIATION_AGE_HOURS` | Yes | Defaults to `24`. |
+| `SOURCE_A_URL` / `SOURCE_A_TOKEN` | No | Event source and bearer token. |
+| `SOURCE_B_URL` / `SOURCE_B_TOKEN` | No | Completion source and bearer token. |
+| `RECONCILIATION_ALERT_RECIPIENT` | No | Consolidated exception recipient. |
 
-## Portfolio note
+The project requests external HTTP, Sheets, email and trigger permissions.
 
-This keeps the cross-system reconciliation pattern while replacing real forms, platforms, participants, fields, and messaging with provider-neutral examples. Matching results trigger human follow-up; they never mutate either source system.
+## Testing the workflow
+
+1. Use test endpoints containing fictional identities only.
+2. Include one exact source-reference match, one normalised email match, one phone match and one true exception older than the grace period.
+3. Include one unmatched recent event and confirm it is ignored until the grace period passes.
+4. Run `reconcileCompletions()` and confirm only the older unmatched event appears in the Sheet/email.
+5. Alter a name slightly and inspect whether the strict similarity threshold behaves as expected for that data set.
+6. Test pagination with more than one response page before installing the schedule.
+
+Fuzzy matching is a prompt for follow-up, not a basis for changing records automatically.

@@ -1,12 +1,147 @@
-function onOpen(){SpreadsheetApp.getUi().createMenu('Project tracker').addItem('New project','showProjectDialog').addItem('Refresh formatting','formatAllProjects').addSeparator().addItem('Set up tracker','setupProjectTracker').addToUi();}
+function onOpen() {
+  SpreadsheetApp.getUi()
+    .createMenu("Project tracker")
+    .addItem("New project", "showProjectDialog")
+    .addItem("Refresh formatting", "formatAllProjects")
+    .addSeparator()
+    .addItem("Set up tracker", "setupProjectTracker")
+    .addToUi();
+}
 
-function setupProjectTracker(){const ss=trackerSpreadsheet_();[[TRACKER.active,[]],[TRACKER.archive,['Archived At','Project ID','Project Name','Project Data']],[TRACKER.config,['Type','Value']]].forEach(([name,headers])=>{const s=ss.getSheetByName(name)||ss.insertSheet(name);if(headers.length&&!s.getLastRow())s.appendRow(headers);});const config=ss.getSheetByName(TRACKER.config);if(config.getLastRow()<2){const rows=[];TRACKER.defaults.statuses.forEach(v=>rows.push(['Status',v]));TRACKER.defaults.priorities.forEach(v=>rows.push(['Priority',v]));config.getRange(2,1,rows.length,2).setValues(rows);}ss.setActiveSheet(ss.getSheetByName(TRACKER.active));}
+function setupProjectTracker() {
+  const ss = trackerSpreadsheet_();
+  [
+    [TRACKER.active, []],
+    [
+      TRACKER.archive,
+      ["Archived At", "Project ID", "Project Name", "Project Data"],
+    ],
+    [TRACKER.config, ["Type", "Value"]],
+  ].forEach(([name, headers]) => {
+    const s = ss.getSheetByName(name) || ss.insertSheet(name);
+    if (headers.length && !s.getLastRow()) s.appendRow(headers);
+  });
+  const config = ss.getSheetByName(TRACKER.config);
+  if (config.getLastRow() < 2) {
+    const rows = [];
+    TRACKER.defaults.statuses.forEach((v) => rows.push(["Status", v]));
+    TRACKER.defaults.priorities.forEach((v) => rows.push(["Priority", v]));
+    config.getRange(2, 1, rows.length, 2).setValues(rows);
+  }
+  ss.setActiveSheet(ss.getSheetByName(TRACKER.active));
+}
 
-function createProject(input){validateProjectInput_(input);const lock=LockService.getDocumentLock();lock.waitLock(15000);try{const sheet=trackerSpreadsheet_().getSheetByName(TRACKER.active),id=Utilities.getUuid(),start=Math.max(1,sheet.getLastRow()+2),rows=[[TRACKER.marker+' '+id],['Project',input.name],['Sponsor',input.sponsor||''],['Target date',input.targetDate?new Date(input.targetDate):''],TRACKER.columns, ...Array.from({length:Number(input.initialRows||5)},()=>Array(TRACKER.columns.length).fill(''))];sheet.getRange(start,1,rows.length,TRACKER.columns.length).setValues(rows.map(r=>r.concat(Array(TRACKER.columns.length-r.length).fill(''))));formatProjectBlock_(sheet,start,rows.length);return{id,start};}finally{lock.releaseLock();}}
+function createProject(input) {
+  validateProjectInput_(input);
+  const lock = LockService.getDocumentLock();
+  lock.waitLock(15000);
+  try {
+    const sheet = trackerSpreadsheet_().getSheetByName(TRACKER.active),
+      id = Utilities.getUuid(),
+      start = Math.max(1, sheet.getLastRow() + 2),
+      rows = [
+        [TRACKER.marker + " " + id],
+        ["Project", input.name],
+        ["Sponsor", input.sponsor || ""],
+        ["Target date", input.targetDate ? new Date(input.targetDate) : ""],
+        TRACKER.columns,
+        ...Array.from({ length: Number(input.initialRows || 5) }, () =>
+          Array(TRACKER.columns.length).fill(""),
+        ),
+      ];
+    sheet
+      .getRange(start, 1, rows.length, TRACKER.columns.length)
+      .setValues(
+        rows.map((r) =>
+          r.concat(Array(TRACKER.columns.length - r.length).fill("")),
+        ),
+      );
+    formatProjectBlock_(sheet, start, rows.length);
+    return { id, start };
+  } finally {
+    lock.releaseLock();
+  }
+}
 
-function addWorkItem(projectId,item){const block=findProjectBlock_(projectId),sheet=block.sheet,firstDataRow=block.start+5,rowCount=Math.max(0,block.end-firstDataRow),rows=rowCount?sheet.getRange(firstDataRow,1,rowCount,TRACKER.columns.length).getValues():[],emptyOffset=rows.findIndex(row=>row.every(value=>value===''));let row;if(emptyOffset>=0){row=firstDataRow+emptyOffset;}else if(block.end<=sheet.getLastRow()){row=block.end-1;sheet.insertRowBefore(row);}else{row=sheet.getLastRow()+1;sheet.insertRowAfter(sheet.getLastRow());}sheet.getRange(row,1,1,TRACKER.columns.length).setValues([[item.name||'',item.owner||'',item.status||trackerOptions_().statuses[0],item.priority||'Normal',item.dueDate?new Date(item.dueDate):'',item.notes||'']]);formatProjectBlock_(sheet,block.start,Math.max(block.end-block.start,row-block.start+1));}
+function addWorkItem(projectId, item) {
+  const block = findProjectBlock_(projectId),
+    sheet = block.sheet,
+    firstDataRow = block.start + 5,
+    rowCount = Math.max(0, block.end - firstDataRow),
+    rows = rowCount
+      ? sheet
+          .getRange(firstDataRow, 1, rowCount, TRACKER.columns.length)
+          .getValues()
+      : [],
+    emptyOffset = rows.findIndex((row) => row.every((value) => value === ""));
+  let row;
+  if (emptyOffset >= 0) {
+    row = firstDataRow + emptyOffset;
+  } else if (block.end <= sheet.getLastRow()) {
+    row = block.end - 1;
+    sheet.insertRowBefore(row);
+  } else {
+    row = sheet.getLastRow() + 1;
+    sheet.insertRowAfter(sheet.getLastRow());
+  }
+  sheet
+    .getRange(row, 1, 1, TRACKER.columns.length)
+    .setValues([
+      [
+        item.name || "",
+        item.owner || "",
+        item.status || trackerOptions_().statuses[0],
+        item.priority || "Normal",
+        item.dueDate ? new Date(item.dueDate) : "",
+        item.notes || "",
+      ],
+    ]);
+  formatProjectBlock_(
+    sheet,
+    block.start,
+    Math.max(block.end - block.start, row - block.start + 1),
+  );
+}
 
-function closeProject(projectId){const lock=LockService.getDocumentLock();lock.waitLock(15000);try{const block=findProjectBlock_(projectId),values=block.sheet.getRange(block.start,1,block.end-block.start,TRACKER.columns.length).getValues(),name=String(values[1][1]||projectId),archive=trackerSpreadsheet_().getSheetByName(TRACKER.archive);archive.appendRow([new Date(),projectId,name,JSON.stringify(values)]);block.sheet.deleteRows(block.start,values.length);return{name};}finally{lock.releaseLock();}}
+function closeProject(projectId) {
+  const lock = LockService.getDocumentLock();
+  lock.waitLock(15000);
+  try {
+    const block = findProjectBlock_(projectId),
+      values = block.sheet
+        .getRange(
+          block.start,
+          1,
+          block.end - block.start,
+          TRACKER.columns.length,
+        )
+        .getValues(),
+      name = String(values[1][1] || projectId),
+      archive = trackerSpreadsheet_().getSheetByName(TRACKER.archive);
+    archive.appendRow([new Date(), projectId, name, JSON.stringify(values)]);
+    block.sheet.deleteRows(block.start, values.length);
+    return { name };
+  } finally {
+    lock.releaseLock();
+  }
+}
 
-function findProjectBlock_(id){const sheet=trackerSpreadsheet_().getSheetByName(TRACKER.active),values=sheet.getRange(1,1,Math.max(sheet.getLastRow(),1),1).getDisplayValues().flat(),start=values.findIndex(v=>v===TRACKER.marker+' '+id)+1;if(!start)throw new Error('Project not found.');const next=values.findIndex((v,i)=>i>=start&&v.indexOf(TRACKER.marker)===0);return{sheet,start,end:next<0?sheet.getLastRow()+1:next+1};}
-function validateProjectInput_(input){if(!input||!String(input.name||'').trim())throw new Error('Project name is required.');if(Number(input.initialRows||0)<1||Number(input.initialRows||0)>50)throw new Error('Initial rows must be between 1 and 50.');}
+function findProjectBlock_(id) {
+  const sheet = trackerSpreadsheet_().getSheetByName(TRACKER.active),
+    values = sheet
+      .getRange(1, 1, Math.max(sheet.getLastRow(), 1), 1)
+      .getDisplayValues()
+      .flat(),
+    start = values.findIndex((v) => v === TRACKER.marker + " " + id) + 1;
+  if (!start) throw new Error("Project not found.");
+  const next = values.findIndex(
+    (v, i) => i >= start && v.indexOf(TRACKER.marker) === 0,
+  );
+  return { sheet, start, end: next < 0 ? sheet.getLastRow() + 1 : next + 1 };
+}
+function validateProjectInput_(input) {
+  if (!input || !String(input.name || "").trim())
+    throw new Error("Project name is required.");
+  if (Number(input.initialRows || 0) < 1 || Number(input.initialRows || 0) > 50)
+    throw new Error("Initial rows must be between 1 and 50.");
+}

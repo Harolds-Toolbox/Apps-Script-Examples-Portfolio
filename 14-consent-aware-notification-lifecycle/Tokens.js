@@ -1,2 +1,40 @@
-function issueLifecycleToken_(purpose,subjectId,contextId){const token=Utilities.getUuid()+Utilities.getUuid().replace(/-/g,''),expires=new Date(Date.now()+lifecycleConfig_().tokenHours*3600000);lifecycleSheets_().tokens.appendRow([token,purpose,subjectId,contextId||'',expires,'']);return token;}
-function readLifecycleToken_(token,purpose,consume){const lock=LockService.getScriptLock();lock.waitLock(15000);try{const sheet=lifecycleSheets_().tokens;if(sheet.getLastRow()<2)throw new Error('Invalid or expired link.');const rows=sheet.getRange(2,1,sheet.getLastRow()-1,LIFECYCLE.headers.tokens.length).getValues(),index=rows.findIndex(r=>String(r[0])===String(token)&&String(r[1])===purpose);if(index<0||rows[index][5]||new Date(rows[index][4]).getTime()<Date.now())throw new Error('Invalid or expired link.');if(consume)sheet.getRange(index+2,6).setValue(new Date());return{subjectId:String(rows[index][2]),contextId:String(rows[index][3])};}finally{lock.releaseLock();}}
+function issueLifecycleToken_(purpose, subjectId, contextId) {
+  const token = Utilities.getUuid() + Utilities.getUuid().replace(/-/g, ""),
+    expires = new Date(Date.now() + lifecycleConfig_().tokenHours * 3600000);
+  lifecycleSheets_().tokens.appendRow([
+    token,
+    purpose,
+    subjectId,
+    contextId || "",
+    expires,
+    "",
+  ]);
+  return token;
+}
+function readLifecycleToken_(token, purpose, consume) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try {
+    const sheet = lifecycleSheets_().tokens;
+    if (sheet.getLastRow() < 2) throw new Error("Invalid or expired link.");
+    const rows = sheet
+        .getRange(2, 1, sheet.getLastRow() - 1, LIFECYCLE.headers.tokens.length)
+        .getValues(),
+      index = rows.findIndex(
+        (r) => String(r[0]) === String(token) && String(r[1]) === purpose,
+      );
+    if (
+      index < 0 ||
+      rows[index][5] ||
+      new Date(rows[index][4]).getTime() < Date.now()
+    )
+      throw new Error("Invalid or expired link.");
+    if (consume) sheet.getRange(index + 2, 6).setValue(new Date());
+    return {
+      subjectId: String(rows[index][2]),
+      contextId: String(rows[index][3]),
+    };
+  } finally {
+    lock.releaseLock();
+  }
+}
