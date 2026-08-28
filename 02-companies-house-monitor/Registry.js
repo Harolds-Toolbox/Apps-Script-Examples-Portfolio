@@ -1,5 +1,5 @@
 function fetchRegistryCompanies_() {
-  const activityCodes = registryListProperty_("REGISTRY_ACTIVITY_CODES");
+  const activityCodes = registryActivityCodes_();
   const postcodeAreas = registryListProperty_("REGISTRY_POSTCODE_AREAS").map(
     function (area) {
       return area.toUpperCase();
@@ -37,6 +37,18 @@ function fetchRegistryCompanies_() {
     .sort(function (left, right) {
       return left[1].localeCompare(right[1]);
     });
+}
+
+function registryActivityCodes_() {
+  const configured = registryProperty_("REGISTRY_ACTIVITY_CODES", true);
+  if (!configured) return [""];
+  const codes = configured
+    .split(",")
+    .map(function (code) {
+      return code.trim();
+    })
+    .filter(Boolean);
+  return codes.indexOf("*") !== -1 || !codes.length ? [""] : codes;
 }
 
 function dedupeRegistryCompanies_(items) {

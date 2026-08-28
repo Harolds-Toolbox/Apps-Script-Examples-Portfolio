@@ -29,14 +29,14 @@ previous snapshot ────────────────────�
 | `REGISTRY_SPREADSHEET_ID` | Yes | Spreadsheet containing `Registry Report`. |
 | `REGISTRY_API_KEY` | No | Companies House API key. |
 | `REGISTRY_POSTCODE_AREAS` | No | Comma-separated outward postcode areas. |
-| `REGISTRY_ACTIVITY_CODES` | No | Comma-separated SIC/activity codes. |
+| `REGISTRY_ACTIVITY_CODES` | No | Comma-separated SIC/activity codes. Set to `*`, or omit the property, to include every SIC code. |
 | `REGISTRY_ALERT_RECIPIENT` | No | Optional summary recipient; leave absent during initial tests. |
 
 The first run may ask for permission to call an external service. Adding the optional recipient also requires permission to send email. Installing the trigger requires permission to manage project triggers.
 
 ## Testing the workflow
 
-1. Use one postcode area and one activity code that return a small result set.
+1. Use one postcode area and one activity code that return a small result set. To test without a SIC filter, set `REGISTRY_ACTIVITY_CODES` to `*` or delete the property.
 2. Run `runRegistryMonitor()` and inspect the report sheet and first CSV snapshot.
 3. Run it again. The second run should compare two snapshots and report zero changes when the source data is unchanged.
 4. Temporarily change the filter, run again and confirm additions/removals are shown.
