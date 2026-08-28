@@ -18,7 +18,7 @@ hourly change-feed reconciliation ─────────┘
 1. Set `SETUP_FOLDER_ID` in `Setup.js`.
 2. Push and run `setupProject()` to create the `Webhook Inbox` spreadsheet.
 3. Add `WEBHOOK_SIGNING_SECRET` with at least 32 random characters.
-4. Deploy as a web app and give the resulting `/exec` URL to the sending system.
+4. Deploy as a web app that executes as the deploying account and allows anonymous requests, matching the included manifest. Give the resulting `/exec` URL to the sending system; timestamped HMAC verification authenticates each request.
 5. Optionally set the reconciliation endpoint properties.
 6. Run `installProjectTriggers()` after a signed test request has completed successfully.
 

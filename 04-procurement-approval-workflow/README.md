@@ -20,7 +20,7 @@ requester submits → PENDING ─┬→ reviewer approves → APPROVED → optio
 2. Push the project and run `setupProject()`.
 3. Approve Drive, Sheets and file-creation access. Setup creates the workflow spreadsheet and a formatted Google Sheet PDF template.
 4. Add the remaining Script Properties below. Generate a random link secret of at least 32 characters.
-5. Deploy as a web app for signed-in users, then add the deployment `/exec` URL as `PROCUREMENT_WEB_APP_URL`.
+5. Deploy as a domain-only web app for signed-in Workspace accounts, then add the deployment `/exec` URL as `PROCUREMENT_WEB_APP_URL`.
 6. Run `installProjectTriggers()` only after reviewer emails are configured.
 
 ## Script Properties

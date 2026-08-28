@@ -17,7 +17,7 @@ signed-in viewer → server allow-list check → read two Sheet tabs → select 
 2. Push the project and run `setupProject()`.
 3. Approve Drive and Sheets access. Setup creates a spreadsheet with `Daily Reconciliation`, `Operational Counts` and current-date synthetic rows.
 4. Add `DASHBOARD_AUTHORIZED_EMAILS` in Script Properties as a comma-separated list. Include the account used for testing.
-5. Deploy as a web app that runs as the user accessing it and requires sign-in.
+5. Deploy as a domain-only web app that runs as the deploying account, matching the included manifest. The server still identifies the signed-in viewer with `Session.getActiveUser()` before reading the spreadsheet.
 
 ## Script Properties
 

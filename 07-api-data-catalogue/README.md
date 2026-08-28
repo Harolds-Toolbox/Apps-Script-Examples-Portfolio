@@ -19,7 +19,7 @@ endpoint config → static/OAuth token → bounded API samples → recursive fie
 2. Push and run `setupProject()` to create the catalogue spreadsheet and its three tabs.
 3. Add the API base URL, endpoint JSON and one authentication method.
 4. Run `generateApiCatalogue()` manually.
-5. Deploy as a web app for signed-in readers if the generated catalogue should have a browser view.
+5. Deploy as a domain-only web app for signed-in Workspace readers if the generated catalogue should have a browser view.
 
 ## Script Properties
 

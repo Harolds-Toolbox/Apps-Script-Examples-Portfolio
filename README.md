@@ -11,7 +11,7 @@ Each numbered directory is its own Apps Script project. They are not intended to
 | Directory | Rundown |
 | --- | --- |
 | [`01-document-generator`](01-document-generator/) | Populates either a Google Doc or Google Sheet template and returns the result as a browser-downloaded PDF. |
-| [`02-companies-house-monitor`](02-companies-house-monitor/) | Searches Companies House on a schedule, snapshots results to CSV and reports additions/removals. |
+| [`02-companies-house-monitor`](02-companies-house-monitor/) | Searches Companies House by postcode-area/SIC partitions, consumes every reported result page, snapshots deduplicated records to CSV and reports additions/removals. SIC filtering can be disabled with `*` or by omitting the property. |
 | [`03-basic-values-display-dashboard`](03-basic-values-display-dashboard/) | Combines two Sheet feeds into an allow-listed, read-only operational dashboard. |
 | [`04-procurement-approval-workflow`](04-procurement-approval-workflow/) | Runs a versioned request/review state machine with signed actions, audit history and optional PDFs. |
 | [`05-reliable-webhook-inbox`](05-reliable-webhook-inbox/) | Acknowledges signed webhooks quickly, queues them durably and processes them with retries and reconciliation. |

@@ -17,7 +17,7 @@ Appointments sheet ← status/response time ← consume token under lock ← con
 
 1. Set `SETUP_FOLDER_ID` at the top of `Setup.js`.
 2. Push and run `setupProject()` to create the appointment, token and audit tabs.
-3. Deploy as a web app and copy the `/exec` URL into `APPOINTMENT_WEB_APP_URL`.
+3. Deploy as a web app that executes as the deploying account and allows anonymous access, matching the included manifest, then copy the `/exec` URL into `APPOINTMENT_WEB_APP_URL`. The opaque, expiring, single-use token authorises the response.
 4. Add a fictional appointment using an email account you control.
 5. Run `sendAppointmentReminders()` manually.
 6. When the response flow works, run `installProjectTriggers()`.
@@ -31,7 +31,7 @@ Appointments sheet ← status/response time ← consume token under lock ← con
 | `RESPONSE_TOKEN_LIFETIME_HOURS` | Yes | Defaults to `48`. |
 | `APPOINTMENT_WEB_APP_URL` | No | Deployment `/exec` URL. |
 
-The project asks for Drive, Sheets, email, web-app and trigger permissions. Use a deployment access setting appropriate for the people receiving response links.
+The project asks for Drive, Sheets, email, web-app and trigger permissions. If every participant belongs to one Workspace domain, the deployment can be restricted to that domain instead of allowing anonymous access.
 
 ## Testing the workflow
 

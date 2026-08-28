@@ -19,10 +19,11 @@ provider POST → HMAC check → record last received time → JSON acknowledgem
 
 1. Set `SETUP_FOLDER_ID` in `Setup.js`. This project creates no Drive templates, but setup validates the deployment folder and writes safe JSON/default thresholds.
 2. Push and run `setupProject()`.
-3. Add the provider URL/token, callback URL and signing secret.
-4. Adapt the small API functions if the provider uses different webhook routes or status fields.
-5. Run `runWebhookMaintenance()` manually with a non-production provider workspace.
-6. Run `installProjectTriggers()` only after create/update/delete behaviour has been checked.
+3. Add the provider URL/token and signing secret.
+4. Deploy as a web app that executes as the deploying account and allows anonymous requests, matching the included manifest. Save its `/exec` URL as `WEBHOOK_CALLBACK_URL` and register the same URL with the provider; inbound HMAC verification authenticates requests.
+5. Adapt the small API functions if the provider uses different webhook routes or status fields.
+6. Run `runWebhookMaintenance()` manually with a non-production provider workspace.
+7. Run `installProjectTriggers()` only after create/update/delete behaviour has been checked.
 
 ## Script Properties
 

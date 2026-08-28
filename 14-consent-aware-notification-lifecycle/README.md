@@ -18,7 +18,7 @@ token housekeeping → remove expired token rows
 
 1. Set `SETUP_FOLDER_ID` in `Setup.js`.
 2. Push and run `setupProject()` to create all five storage tabs and default token/retention values.
-3. Deploy the web app and add its `/exec` URL as `LIFECYCLE_WEB_APP_URL`.
+3. Deploy the web app so it executes as the deploying account and allows anonymous access, matching the included manifest, then add its `/exec` URL as `LIFECYCLE_WEB_APP_URL`. Unsubscribe links are token-authorised; recipient-review actions additionally require the configured signed-in reviewer.
 4. Set `LIFECYCLE_REVIEWER_EMAIL` to an account you control.
 5. Confirm the deployment exposes the signed-in reviewer identity to `Session.getActiveUser()`.
 6. Test manually before running `installProjectTriggers()`.

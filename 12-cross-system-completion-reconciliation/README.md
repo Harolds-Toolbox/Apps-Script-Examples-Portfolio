@@ -32,6 +32,8 @@ System B pages → normalise completions ─────┘                     
 
 The project requests external HTTP, Sheets, email and trigger permissions.
 
+Each source client follows `next` or `nextPageUrl` links and stops after 100 pages as a runaway-loop guard. When adapting a provider, confirm its final-page contract and ensure a legitimate result set cannot exceed that bound; the generic client does not currently receive a total-count field with which to prove completeness.
+
 ## Testing the workflow
 
 1. Use test endpoints containing fictional identities only.
@@ -39,6 +41,6 @@ The project requests external HTTP, Sheets, email and trigger permissions.
 3. Include one unmatched recent event and confirm it is ignored until the grace period passes.
 4. Run `reconcileCompletions()` and confirm only the older unmatched event appears in the Sheet/email.
 5. Alter a name slightly and inspect whether the strict similarity threshold behaves as expected for that data set.
-6. Test pagination with more than one response page before installing the schedule.
+6. Test pagination with more than one response page, confirm the provider's final page clears `next`/`nextPageUrl`, and verify the expected record count before installing the schedule.
 
 Fuzzy matching is a prompt for follow-up, not a basis for changing records automatically.

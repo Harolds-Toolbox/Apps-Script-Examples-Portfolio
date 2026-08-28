@@ -21,7 +21,7 @@ web form → server validation → choose template type
 4. Approve access to Google Drive, Docs and Sheets when prompted.
 5. Check Script Properties. Setup writes `DOCUMENT_TEMPLATE_ID`, `SPREADSHEET_TEMPLATE_ID` and `SPREADSHEET_TEMPLATE_SHEET_NAME` automatically.
 6. Run `runDocumentGeneratorChecks()` and confirm `{ ok: true }`.
-7. Deploy as a web app for the intended signed-in users.
+7. Deploy as a web app for signed-in accounts in the deploying Workspace domain, matching the included `DOMAIN` manifest access setting.
 
 Setup creates both fictional templates in the configured folder. The Markdown files under `sample-template` describe the same layouts if you want to rebuild them manually.
 
