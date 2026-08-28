@@ -27,7 +27,7 @@ function getProcurementBootstrap() {
   return {
     email: email,
     reviewer: isProcurementReviewer_(email),
-    requests: listProcurementRequests_(email),
+    requests: listProcurementRequests_(email).map(procurementRequestForClient_),
   };
 }
 
@@ -42,7 +42,7 @@ function submitProcurementRequest(input) {
     {},
   );
   sendProcurementReviewEmail_(request);
-  return request;
+  return procurementRequestForClient_(request);
 }
 
 function performProcurementAction(input) {
@@ -63,7 +63,7 @@ function performProcurementAction(input) {
     input && input.message,
   );
   sendProcurementOutcomeEmail_(updated, action);
-  return updated;
+  return procurementRequestForClient_(updated);
 }
 
 function executeSignedProcurementAction(payload) {
@@ -91,5 +91,11 @@ function executeSignedProcurementAction(payload) {
 }
 
 function refreshProcurementRequests() {
-  return listProcurementRequests_(procurementUser_());
+  return listProcurementRequests_(procurementUser_()).map(
+    procurementRequestForClient_,
+  );
+}
+
+function procurementRequestForClient_(request) {
+  return JSON.parse(JSON.stringify(request));
 }

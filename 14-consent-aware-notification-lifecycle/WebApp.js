@@ -5,7 +5,7 @@ function doGet(e) {
   return template
     .evaluate()
     .setTitle("Notification preferences")
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.DENY);
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.DEFAULT);
 }
 
 function unsubscribeWithToken(token) {

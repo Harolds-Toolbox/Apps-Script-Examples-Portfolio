@@ -4,7 +4,7 @@ function doGet(e) {
   return template
     .evaluate()
     .setTitle("Appointment response")
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.DENY);
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.DEFAULT);
 }
 
 function submitAppointmentResponse(token, response) {
