@@ -22,5 +22,6 @@ function webhookManagerConfig_() {
     scope: JSON.parse(p.getProperty("WEBHOOK_SCOPE_JSON") || "{}"),
     alert: p.getProperty("WEBHOOK_ALERT_RECIPIENT") || "",
     failureThreshold: Number(p.getProperty("WEBHOOK_FAILURE_THRESHOLD") || 3),
+    maxPages: Number(p.getProperty("WEBHOOK_MAX_PAGES") || 100),
   };
 }

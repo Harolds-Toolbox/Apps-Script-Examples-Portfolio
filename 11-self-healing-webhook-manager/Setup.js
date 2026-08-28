@@ -6,6 +6,7 @@ function setupProject() {
     WEBHOOK_EVENTS_JSON: '["record.created","record.updated"]',
     WEBHOOK_SCOPE_JSON: "{}",
     WEBHOOK_FAILURE_THRESHOLD: "3",
+    WEBHOOK_MAX_PAGES: "100",
   });
   return {
     propertiesStillRequired: [

@@ -26,13 +26,14 @@ System B pages → normalise completions ─────┘                     
 | --- | --- | --- |
 | `RECONCILIATION_SPREADSHEET_ID` | Yes | `Completion Exceptions` report. |
 | `RECONCILIATION_AGE_HOURS` | Yes | Defaults to `24`. |
+| `RECONCILIATION_MAX_PAGES` | Yes | Defaults to `100`; reaching the limit while another page exists is an error. |
 | `SOURCE_A_URL` / `SOURCE_A_TOKEN` | No | Event source and bearer token. |
 | `SOURCE_B_URL` / `SOURCE_B_TOKEN` | No | Completion source and bearer token. |
 | `RECONCILIATION_ALERT_RECIPIENT` | No | Consolidated exception recipient. |
 
 The project requests external HTTP, Sheets, email and trigger permissions.
 
-Each source client follows `next` or `nextPageUrl` links and stops after 100 pages as a runaway-loop guard. When adapting a provider, confirm its final-page contract and ensure a legitimate result set cannot exceed that bound; the generic client does not currently receive a total-count field with which to prove completeness.
+Each source client follows `next`, `nextPageUrl` or `links.next` URLs. It detects repeated pages, refuses cross-origin next links so bearer tokens cannot be forwarded elsewhere, and throws rather than returning partial data when `RECONCILIATION_MAX_PAGES` is reached while another page remains. When adapting a provider, confirm its final-page contract and set a bound that safely exceeds legitimate result sizes.
 
 ## Testing the workflow
 
@@ -41,6 +42,7 @@ Each source client follows `next` or `nextPageUrl` links and stops after 100 pag
 3. Include one unmatched recent event and confirm it is ignored until the grace period passes.
 4. Run `reconcileCompletions()` and confirm only the older unmatched event appears in the Sheet/email.
 5. Alter a name slightly and inspect whether the strict similarity threshold behaves as expected for that data set.
-6. Test pagination with more than one response page, confirm the provider's final page clears `next`/`nextPageUrl`, and verify the expected record count before installing the schedule.
+6. Test pagination with more than one response page, confirm the provider's final page clears its next link, and verify the expected record count before installing the schedule.
+7. Run `npm test` locally to check multi-page collection, loop detection, cross-origin rejection and page-limit failure with deterministic source mocks.
 
 Fuzzy matching is a prompt for follow-up, not a basis for changing records automatically.

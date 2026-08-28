@@ -14,14 +14,14 @@ Each numbered directory is its own Apps Script project. They are not intended to
 | [`02-companies-house-monitor`](02-companies-house-monitor/) | Searches Companies House by postcode-area/SIC partitions, consumes every reported result page, snapshots deduplicated records to CSV and reports additions/removals. SIC filtering can be disabled with `*` or by omitting the property. |
 | [`03-basic-values-display-dashboard`](03-basic-values-display-dashboard/) | Combines two Sheet feeds into an allow-listed, read-only operational dashboard. |
 | [`04-procurement-approval-workflow`](04-procurement-approval-workflow/) | Runs a versioned request/review state machine with signed actions, audit history and optional PDFs. |
-| [`05-reliable-webhook-inbox`](05-reliable-webhook-inbox/) | Acknowledges signed webhooks quickly, queues them durably and processes them with retries and reconciliation. |
+| [`05-reliable-webhook-inbox`](05-reliable-webhook-inbox/) | Acknowledges signed webhooks quickly, commits them idempotently to a durable Sheet inbox and processes them with retries and reconciliation. |
 | [`06-schema-aware-file-pipeline`](06-schema-aware-file-pipeline/) | Discovers CSV/XLSX files in Drive, validates headers and publishes through staging tabs. |
 | [`07-api-data-catalogue`](07-api-data-catalogue/) | Samples JSON endpoints and builds a searchable catalogue of fields, types and likely relationships. |
 | [`08-appointment-confirmation-workflow`](08-appointment-confirmation-workflow/) | Sends expiring one-time confirmation links and records responses, audits and overdue follow-up. |
 | [`09-record-history-entity-resolution`](09-record-history-entity-resolution/) | Keeps versioned snapshots/history and raises possible duplicate entities for manual review. |
 | [`10-dynamic-project-intake-tracker`](10-dynamic-project-intake-tracker/) | Creates and archives repeating project blocks in a bound Sheet using stable IDs and configured validation. |
-| [`11-self-healing-webhook-manager`](11-self-healing-webhook-manager/) | Checks provider webhook registrations and reactivates, deduplicates or rotates them when needed. |
-| [`12-cross-system-completion-reconciliation`](12-cross-system-completion-reconciliation/) | Compares two paginated systems and produces a consolidated missing-completion report. |
+| [`11-self-healing-webhook-manager`](11-self-healing-webhook-manager/) | Checks complete provider webhook listings and verifies reactivation, deduplication or rotation changes before finishing. |
+| [`12-cross-system-completion-reconciliation`](12-cross-system-completion-reconciliation/) | Compares two paginated systems, rejects incomplete page traversal and produces a consolidated missing-completion report. |
 | [`13-configuration-management-dialog`](13-configuration-management-dialog/) | Maintains ordered Sheet configuration through a revision-aware dialog with rollback, Unicode-safe bootstrap and formula-safe text handling. |
 | [`14-consent-aware-notification-lifecycle`](14-consent-aware-notification-lifecycle/) | Matches preferences, issues hashed one-time review/unsubscribe links and records retry-aware delivery and retention state. |
 
@@ -124,5 +124,13 @@ clasp can also create versions and deployments with `clasp create-deployment`, b
 ## Local checks
 
 Apps Script services such as `SpreadsheetApp`, `DriveApp` and `MailApp` do not run in Node.js. Local checks can still catch syntax, invalid manifests and browser-script parsing errors before a push. Runtime tests should use generated resources, fictional records and non-production external accounts.
+
+Run the repository checks with Node.js 22 or later:
+
+```bash
+npm run verify
+```
+
+The command validates all fourteen project layouts, parses every manifest, checks JavaScript syntax, rejects tracked clasp/deployment credentials and runs deterministic regression tests for the queue and pagination failure paths. The same command runs through GitHub Actions on pushes and pull requests.
 
 Never commit `.clasp.json`, `.clasprc.json`, API keys, deployment URLs, source payloads or exported production data. Script Properties are the boundary for deployment secrets and identifiers.

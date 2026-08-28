@@ -13,6 +13,7 @@ function setupProject() {
   saveSetupProperties_({
     RECONCILIATION_SPREADSHEET_ID: spreadsheet.getId(),
     RECONCILIATION_AGE_HOURS: "24",
+    RECONCILIATION_MAX_PAGES: "100",
   });
   return { spreadsheetId: spreadsheet.getId() };
 }

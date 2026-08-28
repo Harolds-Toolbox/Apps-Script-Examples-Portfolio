@@ -1,6 +1,6 @@
 # Reliable webhook inbox
 
-Apps Script web requests need to finish quickly. This receiver validates the request, queues the raw event in Script Properties and acknowledges it; scheduled jobs then move events into a Sheet, process them with retries and optionally reconcile a source change feed.
+Apps Script web requests need to finish quickly. This receiver validates the request, queues the raw event temporarily in Script Properties and acknowledges it; scheduled jobs then commit events to a Sheet, process them with retries and optionally reconcile a source change feed.
 
 ## Flow
 
@@ -11,7 +11,7 @@ minute trigger → Sheet inbox → route handler → DONE / RETRY / DEAD
 hourly change-feed reconciliation ─────────┘
 ```
 
-`runWebhookProcessingCycle()` in `Main.js` is the manual equivalent of the scheduled processing stages. The route handlers in `Processor.js` are intentionally small places to attach destination-specific work.
+`runWebhookProcessingCycle()` in `Main.js` is the manual equivalent of the scheduled processing stages. The route handlers in `Processor.js` are intentionally small places to attach destination-specific work. The Sheet row is the durable queue commit: temporary properties and deduplication state are cleared only after the Sheet write and flush succeed. If execution stops after the write but before cleanup, the next run recognises the existing event ID and finishes cleanup without appending a duplicate.
 
 ## One-time setup
 
@@ -48,5 +48,6 @@ Use a fictional body such as:
 4. Run `runWebhookProcessingCycle()` and confirm the event reaches `DONE`.
 5. Repeat the same event ID and confirm it is not processed twice.
 6. Send an invalid signature and an old timestamp; both should be rejected before queueing.
+7. Run `npm test` locally to exercise the interrupted-write recovery path with mocked Apps Script services.
 
 Do not install the recurring triggers until the route handlers are safe to run repeatedly.

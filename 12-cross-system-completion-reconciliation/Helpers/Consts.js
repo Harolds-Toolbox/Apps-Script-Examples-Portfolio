@@ -15,10 +15,12 @@ function reconciliationConfig_() {
     sourceA: {
       url: p.getProperty("SOURCE_A_URL"),
       token: p.getProperty("SOURCE_A_TOKEN"),
+      maxPages: Number(p.getProperty("RECONCILIATION_MAX_PAGES") || 100),
     },
     sourceB: {
       url: p.getProperty("SOURCE_B_URL"),
       token: p.getProperty("SOURCE_B_TOKEN"),
+      maxPages: Number(p.getProperty("RECONCILIATION_MAX_PAGES") || 100),
     },
     recipient: p.getProperty("RECONCILIATION_ALERT_RECIPIENT"),
     ageHours: Number(p.getProperty("RECONCILIATION_AGE_HOURS") || 24),
